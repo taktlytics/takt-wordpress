@@ -4,7 +4,7 @@ Tags: analytics, privacy, woocommerce, statistics, tracking
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 8.1
-Stable tag: 0.3.2
+Stable tag: 0.3.3
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
@@ -55,6 +55,9 @@ In the WordPress options table, or in a wp-config.php constant (TAKT_API_KEY) wh
 
 == Changelog ==
 
+= 0.3.3 =
+* Fix: the Kept query params, Excluded paths and File extensions settings were emptied on every page load, right after being saved. The snippet never carried data-query-params and the admin fields came back blank.
+
 = 0.3.2 =
 * Fix: the ingest origin setting now accepts the full collect URL (https://taktlytics.com/api/event) as well as the origin. It used to be sent verbatim to a client that appends /api/event, so purchases silently posted to /api/event/api/event and were lost.
 * The settings field is renamed "Ingest origin" and documents both accepted forms. Existing settings are unaffected.
@@ -74,6 +77,9 @@ In the WordPress options table, or in a wp-config.php constant (TAKT_API_KEY) wh
 * Initial release: snippet injection and WooCommerce server-to-server purchase events.
 
 == Upgrade Notice ==
+
+= 0.3.3 =
+Fixes three list settings being silently emptied after save. Re-enter your Kept query params, Excluded paths and File extensions if you had set them.
 
 = 0.3.2 =
 Fixes WooCommerce purchases silently failing when the ingest setting held the full collect URL. Check Settings → Takt Analytics if purchases never arrived.

@@ -57,6 +57,31 @@ final class SettingsTest extends TestCase
         $this->assertSame([], Settings::sanitize([])['exclude']);
     }
 
+    public function test_sanitize_is_idempotent_on_its_own_output(): void
+    {
+        $once = Settings::sanitize([
+            'domain' => 'example.com',
+            'query_params' => 'utm_source, utm_medium, gclid',
+            'exclude' => '/app, /account',
+            'file_extensions' => 'pdf, zip',
+        ]);
+
+        $this->assertSame($once, Settings::sanitize($once));
+    }
+
+    public function test_sanitize_accepts_already_parsed_lists(): void
+    {
+        $out = Settings::sanitize([
+            'query_params' => ['utm_source', 'gclid'],
+            'exclude' => ['/app'],
+            'file_extensions' => ['pdf', 'zip'],
+        ]);
+
+        $this->assertSame(['utm_source', 'gclid'], $out['query_params']);
+        $this->assertSame(['/app'], $out['exclude']);
+        $this->assertSame(['pdf', 'zip'], $out['file_extensions']);
+    }
+
     public function test_sanitize_casts_advanced_boolean_flags(): void
     {
         $on = Settings::sanitize(['track_query' => '1', 'ignore_dnt' => '1', 'disable_tracking' => '1']);

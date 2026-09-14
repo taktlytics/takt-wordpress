@@ -1,5 +1,16 @@
 # Takt Analytics for WordPress
 
+## 0.3.3
+
+- **Kept query params**, **Excluded paths** and **File extensions** were silently
+  emptied on every page load. `Settings::sanitize()` parses the comma-separated
+  string typed in the admin field into a list, but it is also re-applied to the
+  stored settings on each read (`Plugin::boot`, `AdminPage::render`). Fed its own
+  output, the three parsers saw a list instead of a string and returned an empty
+  one. The setting was therefore lost right after being saved: the snippet never
+  carried `data-query-params`, and the admin field came back blank. The parsers
+  now accept both forms, so `sanitize()` is idempotent, which a test locks in.
+
 ## 0.3.2
 
 - **Ingest origin**: the server-to-server setting is an *origin* — `takt-core-php`

@@ -115,11 +115,8 @@ final class Settings
      */
     private static function parseParams(mixed $raw): array
     {
-        if (!is_string($raw)) {
-            return [];
-        }
         $out = [];
-        foreach (explode(',', $raw) as $part) {
+        foreach (explode(',', self::toCsv($raw)) as $part) {
             $name = trim($part);
             if ($name !== '' && preg_match('/^[A-Za-z0-9_-]+$/', $name)) {
                 $out[] = $name;
@@ -139,11 +136,8 @@ final class Settings
      */
     private static function parsePaths(mixed $raw): array
     {
-        if (!is_string($raw)) {
-            return [];
-        }
         $out = [];
-        foreach (explode(',', $raw) as $part) {
+        foreach (explode(',', self::toCsv($raw)) as $part) {
             $path = trim($part);
             if ($path !== '' && preg_match('#^/[A-Za-z0-9_\-/]*\z#', $path)) {
                 $out[] = $path;
@@ -172,6 +166,15 @@ final class Settings
         return rtrim(substr($url, 0, -strlen(self::INGEST_PATH)), '/');
     }
 
+    private static function toCsv(mixed $raw): string
+    {
+        if (is_array($raw)) {
+            $raw = implode(',', array_filter($raw, 'is_scalar'));
+        }
+
+        return is_string($raw) ? $raw : '';
+    }
+
     /** A http(s) URL with a host, trailing slash dropped — else ''. */
     private static function sanitizeUrl(mixed $raw): string
     {
@@ -195,11 +198,8 @@ final class Settings
      */
     private static function parseExtensions(mixed $raw): array
     {
-        if (!is_string($raw)) {
-            return [];
-        }
         $out = [];
-        foreach (explode(',', $raw) as $part) {
+        foreach (explode(',', self::toCsv($raw)) as $part) {
             $ext = ltrim(strtolower(trim($part)), '.');
             if ($ext !== '') {
                 $out[] = $ext;
