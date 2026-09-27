@@ -21,7 +21,7 @@ Takt itself is a managed service hosted in Europe; the plugin connects your site
 
 ## Installation
 
-1. Download `takt-analytics.zip` from the [latest release](https://github.com/vskstudio/takt-wordpress/releases).
+1. Download `takt-analytics.zip` from the [latest release](https://github.com/taktlytics/takt-wordpress/releases).
 2. In **WP Admin → Plugins → Add New → Upload Plugin**, upload the ZIP and activate it.
 3. Open **Settings → Takt Analytics** and set your domain. That alone is enough for the browser snippet: it posts to `https://taktlytics.com/api/event` by default. To also report WooCommerce purchases, fill in the ingest origin (`https://taktlytics.com`) and your API key.
 

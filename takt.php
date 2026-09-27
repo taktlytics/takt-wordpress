@@ -2,7 +2,7 @@
 
 /**
  * Plugin Name:       Takt Analytics
- * Plugin URI:        https://github.com/vskstudio/takt-wordpress
+ * Plugin URI:        https://github.com/taktlytics/takt-wordpress
  * Description:       Privacy-first analytics for WordPress: injects the Takt browser snippet and reports WooCommerce purchases as server-to-server events.
  * Version:           0.3.4
  * Requires at least: 6.0

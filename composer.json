@@ -12,15 +12,15 @@
     "tracking",
     "snippet"
   ],
-  "homepage": "https://github.com/vskstudio/takt-wordpress",
+  "homepage": "https://github.com/taktlytics/takt-wordpress",
   "authors": [
     {
       "name": "vskstudio"
     }
   ],
   "support": {
-    "issues": "https://github.com/vskstudio/takt-wordpress/issues",
-    "source": "https://github.com/vskstudio/takt-wordpress"
+    "issues": "https://github.com/taktlytics/takt-wordpress/issues",
+    "source": "https://github.com/taktlytics/takt-wordpress"
   },
   "require": {
     "php": ">=8.1",
