@@ -1,5 +1,11 @@
 # Takt Analytics for WordPress
 
+## 0.3.4
+
+- The bundled `vskstudio/takt-core-php` moves to 0.5.2, which pins and vendors
+  `@vskstudio/takt-core` 0.9.0. In SDK mode, a custom `scrubUrl` now also
+  rewrites the `url` prop of outbound-link and file-download events.
+
 ## 0.3.3
 
 - **Kept query params**, **Excluded paths** and **File extensions** were silently

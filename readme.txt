@@ -4,7 +4,7 @@ Tags: analytics, privacy, woocommerce, statistics, tracking
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 8.1
-Stable tag: 0.3.3
+Stable tag: 0.3.4
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
@@ -55,6 +55,9 @@ In the WordPress options table, or in a wp-config.php constant (TAKT_API_KEY) wh
 
 == Changelog ==
 
+= 0.3.4 =
+* The bundled takt-core-php moves to 0.5.2, which loads takt-core 0.9.0. With a custom URL scrubber, outbound-link and file-download URLs are now scrubbed too, not only the page URL and referrer.
+
 = 0.3.3 =
 * Fix: the Kept query params, Excluded paths and File extensions settings were emptied on every page load, right after being saved. The snippet never carried data-query-params and the admin fields came back blank.
 
@@ -77,6 +80,9 @@ In the WordPress options table, or in a wp-config.php constant (TAKT_API_KEY) wh
 * Initial release: snippet injection and WooCommerce server-to-server purchase events.
 
 == Upgrade Notice ==
+
+= 0.3.4 =
+Ships takt-core-php 0.5.2 (takt-core 0.9.0). No settings change.
 
 = 0.3.3 =
 Fixes three list settings being silently emptied after save. Re-enter your Kept query params, Excluded paths and File extensions if you had set them.
