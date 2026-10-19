@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8bf895f49971fb681ac24b7c0283a4b2",
+    "content-hash": "102f732655211f74186bde1a9fdf478a",
     "packages": [
         {
             "name": "nyholm/psr7",
@@ -325,16 +325,16 @@
         },
         {
             "name": "vskstudio/takt-core-php",
-            "version": "v0.5.2",
+            "version": "v0.6.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/taktlytics/takt-core-php.git",
-                "reference": "c16300eff0606f397f325a1b23ce84715bc5718d"
+                "reference": "d7f335756bfd6646aa4c563fa4d1015eb04238f0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/taktlytics/takt-core-php/zipball/c16300eff0606f397f325a1b23ce84715bc5718d",
-                "reference": "c16300eff0606f397f325a1b23ce84715bc5718d",
+                "url": "https://api.github.com/repos/taktlytics/takt-core-php/zipball/d7f335756bfd6646aa4c563fa4d1015eb04238f0",
+                "reference": "d7f335756bfd6646aa4c563fa4d1015eb04238f0",
                 "shasum": ""
             },
             "require": {
@@ -366,7 +366,7 @@
                 }
             ],
             "description": "Framework-agnostic PHP core for Takt analytics: browser snippet renderer + server-to-server event client.",
-            "homepage": "https://github.com/vskstudio/takt-core-php",
+            "homepage": "https://github.com/taktlytics/takt-core-php",
             "keywords": [
                 "analytics",
                 "privacy",
@@ -376,10 +376,10 @@
                 "tracking"
             ],
             "support": {
-                "issues": "https://github.com/vskstudio/takt-core-php/issues",
-                "source": "https://github.com/vskstudio/takt-core-php"
+                "issues": "https://github.com/taktlytics/takt-core-php/issues",
+                "source": "https://github.com/taktlytics/takt-core-php"
             },
-            "time": "2026-09-27T16:26:04+00:00"
+            "time": "2026-10-19T07:06:47+00:00"
         }
     ],
     "packages-dev": [

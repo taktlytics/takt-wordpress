@@ -1,6 +1,11 @@
 # Takt Analytics for WordPress
 
-## Unreleased
+## 0.4.0
+
+- The bundled `vskstudio/takt-core-php` moves to 0.6.1, which pins and vendors
+  `@vskstudio/takt-core` 0.11.1. Route redaction and URL scrubbing now also
+  apply to outbound-link and file-download destinations and to the `404` path,
+  and excluded paths match case-insensitively on the percent-decoded path.
 
 ### Hardening
 
