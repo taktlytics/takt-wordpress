@@ -84,9 +84,19 @@ define('TAKT_API_KEY', 'your-key');
 define('TAKT_SCRUB_URL', '(u) => u.split("#")[0]');
 ```
 
+### Plain `http` endpoints
+
+The ingest origin and the script origin must use `https`. Plain `http` is accepted for `localhost`, `127.0.0.1` and `[::1]` only. For a development setup that reaches Takt over another host, list the extra hosts in a constant (comma-separated, empty by default):
+
+```php
+define('TAKT_PLAINTEXT_HOSTS', 'takt.test, dev.example.test');
+```
+
 ### Privacy
 
 WooCommerce purchase events are sent from your server to the configured Takt ingest origin and include the customer's IP address and user agent for attribution. They are forwarded, never logged by the plugin. The browser tracker honours `Do Not Track` (unless *Ignore Do-Not-Track* is on) and a `takt_ignore` localStorage opt-out.
+
+The IP address sent with a purchase is the one WooCommerce records on the order at checkout (`get_customer_ip_address()`). WooCommerce reads it from the `X-Real-IP` header, then from the first address of `X-Forwarded-For`, and only falls back to `REMOTE_ADDR` when neither is present. It does not check that the request came through a proxy you control, so those headers are client-supplied unless your edge overwrites them. The address reflects the real visitor only when the reverse proxy or CDN in front of WordPress sets `X-Real-IP` or `X-Forwarded-For` from the connecting address, or when WordPress is reached directly. A forged value can only distort the attribution of a purchase (geography, stats); it never changes the revenue or the number of events.
 
 ## Development
 

@@ -1,5 +1,27 @@
 # Takt Analytics for WordPress
 
+## Unreleased
+
+### Hardening
+
+- The **Script origin** and **Ingest origin** settings accept `https` only. Plain
+  `http` is still accepted for `localhost`, `127.0.0.1` and `[::1]`; other hosts
+  can be allowed with the `TAKT_PLAINTEXT_HOSTS` constant in `wp-config.php`.
+  Upgrade note: a stored ingest origin that is no longer accepted (plain `http`
+  outside loopback, or a URL without a scheme) is ignored. WooCommerce purchases
+  stop being sent until it is corrected to `https`; an admin notice and the
+  settings screen both say so.
+- The admin screen warns when the API key is stored in the database rather than
+  through the `TAKT_API_KEY` constant in `wp-config.php`.
+- The release workflow grants `contents: write` only to the job that publishes
+  the release, the build job runs read-only, and every action is pinned to a
+  commit SHA with `persist-credentials: false` on checkouts.
+- `bin/build.sh` pins php-scoper to 0.18.20 and refuses to run it unless its
+  SHA256 matches. `composer.lock` is now versioned, so the build resolves the
+  same dependencies every time.
+- The README documents where the IP address sent with a WooCommerce purchase
+  comes from and when it reflects the real visitor.
+
 ## 0.3.4
 
 - The bundled `vskstudio/takt-core-php` moves to 0.5.2, which pins and vendors

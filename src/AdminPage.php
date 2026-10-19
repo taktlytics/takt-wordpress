@@ -13,10 +13,16 @@ final class AdminPage
 {
     private const GROUP = 'takt_group';
 
+    private const URL_LABELS = [
+        'api_endpoint' => 'Origine d\'ingestion',
+        'script_origin' => 'Origine du script',
+    ];
+
     public function register(): void
     {
         \add_action('admin_menu', [$this, 'addPage']);
         \add_action('admin_init', [$this, 'registerSetting']);
+        \add_action('admin_notices', [$this, 'renderIgnoredUrlNotice']);
     }
 
     public function addPage(): void
@@ -53,7 +59,95 @@ final class AdminPage
             }
         }
 
-        return Settings::sanitize($raw);
+        $clean = Settings::sanitize($raw);
+        foreach (self::rejectedUrlKeys($raw, $clean) as $key) {
+            \add_settings_error(
+                Plugin::OPTION,
+                'takt_' . $key,
+                self::URL_LABELS[$key] . ' : URL refusée. Seul https est accepté, http est réservé à localhost.',
+                'error',
+            );
+        }
+
+        return $clean;
+    }
+
+    /**
+     * @param array<string,mixed> $stored
+     * @return list<string>
+     */
+    public static function ignoredUrlKeys(array $stored): array
+    {
+        return self::rejectedUrlKeys($stored, Settings::sanitize($stored));
+    }
+
+    /**
+     * @param array<string,mixed> $stored
+     */
+    public static function ignoredUrlNotice(array $stored): string
+    {
+        $messages = array_map(
+            static fn (string $key): string => '<p>' . \esc_html(self::ignoredUrlMessage($key)) . '</p>',
+            self::ignoredUrlKeys($stored),
+        );
+
+        return $messages === [] ? '' : '<div class="notice notice-error">' . implode('', $messages) . '</div>';
+    }
+
+    public function renderIgnoredUrlNotice(): void
+    {
+        if (!\current_user_can('manage_options') || \get_current_screen()?->id === 'settings_page_takt-analytics') {
+            return;
+        }
+
+        echo self::ignoredUrlNotice((array) \get_option(Plugin::OPTION, []));
+    }
+
+    /**
+     * @param array<string,mixed> $raw
+     * @param array<string,mixed> $clean
+     * @return list<string>
+     */
+    private static function rejectedUrlKeys(array $raw, array $clean): array
+    {
+        $rejected = [];
+        foreach (array_keys(self::URL_LABELS) as $key) {
+            $submitted = is_string($raw[$key] ?? null) ? trim($raw[$key]) : '';
+            if ($submitted !== '' && $clean[$key] === '') {
+                $rejected[] = $key;
+            }
+        }
+
+        return $rejected;
+    }
+
+    private static function ignoredUrlMessage(string $key): string
+    {
+        $message = self::URL_LABELS[$key]
+            . " : l'URL enregistrée n'est pas acceptée (https requis, http réservé à localhost).";
+
+        return $key === 'api_endpoint'
+            ? $message . ' Tant qu\'elle n\'est pas corrigée, l\'envoi des achats WooCommerce est interrompu.'
+            : $message;
+    }
+
+    /**
+     * @param list<string> $ignored
+     */
+    private static function ignoredUrlHint(string $key, array $ignored): string
+    {
+        return in_array($key, $ignored, true) ? self::ignoredUrlMessage($key) : '';
+    }
+
+    public static function keyStorageNotice(bool $locked, string $storedKey): string
+    {
+        if ($locked || $storedKey === '') {
+            return '';
+        }
+
+        return '<div class="notice notice-warning"><p>'
+            . \esc_html('La clé API est enregistrée dans les options WordPress. Définissez la constante TAKT_API_KEY dans wp-config.php pour la retirer de la base de données.')
+            . '</p></div>';
     }
 
     public function render(): void
@@ -62,11 +156,15 @@ final class AdminPage
             return;
         }
 
-        $s = Settings::sanitize((array) \get_option(Plugin::OPTION, []));
+        $stored = (array) \get_option(Plugin::OPTION, []);
+        $s = Settings::sanitize($stored);
+        $ignored = self::ignoredUrlKeys($stored);
         $keyLocked = \defined('TAKT_API_KEY');
         $hasKey = $keyLocked || ($s['api_key'] ?? '') !== '';
 
-        echo '<div class="wrap"><h1>Takt Analytics</h1><form method="post" action="options.php">';
+        echo '<div class="wrap"><h1>Takt Analytics</h1>'
+            . self::keyStorageNotice($keyLocked, (string) $s['api_key'])
+            . '<form method="post" action="options.php">';
         \settings_fields(self::GROUP);
         echo '<table class="form-table" role="presentation">';
 
@@ -77,7 +175,7 @@ final class AdminPage
             'asset' => 'Fichier hébergé',
             'sdk' => 'SDK (module ES)',
         ]);
-        $this->textRow('script_origin', 'Origine du script', $s['script_origin'], 'https://cdn.exemple.com');
+        $this->textRow('script_origin', 'Origine du script', $s['script_origin'], 'https://cdn.exemple.com', self::ignoredUrlHint('script_origin', $ignored));
         $this->checkboxRow('exclude_localhost', 'Exclure localhost', $s['exclude_localhost']);
 
         $this->checkboxRow('outbound', 'Clics sortants', $s['outbound']);
@@ -99,13 +197,15 @@ final class AdminPage
             'completed' => 'Terminée',
             'processing' => 'En traitement',
         ]);
+        $endpointHint = self::ignoredUrlHint('api_endpoint', $ignored);
         $this->textRow(
             'api_endpoint',
             "Origine d'ingestion",
             $s['api_endpoint'],
             'https://taktlytics.com',
             'Origine du service Takt, sans le chemin de collecte. « /api/event » est ajouté automatiquement, '
-                . "et l'URL de collecte complète est acceptée puis repliée sur son origine.",
+                . "et l'URL de collecte complète est acceptée puis repliée sur son origine."
+                . ($endpointHint === '' ? '' : ' ' . $endpointHint),
         );
         $this->apiKeyRow($hasKey, $keyLocked);
 
