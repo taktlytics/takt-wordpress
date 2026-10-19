@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Vskstudio\Takt\WordPress\Tests;
 
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 use Vskstudio\Takt\Mode;
 use Vskstudio\Takt\WordPress\Settings;
@@ -170,6 +171,7 @@ final class SettingsTest extends TestCase
         $this->assertSame('', $out['api_endpoint']);
         $this->assertSame('', $out['script_origin']);
         $this->assertSame('', Settings::sanitize(['script_origin' => 'http://localhost.example.com'])['script_origin']);
+        $this->assertSame('', Settings::sanitize(['api_endpoint' => 'http://host.docker.internal:9911'])['api_endpoint']);
     }
 
     public function test_sanitize_accepts_plain_http_on_loopback_hosts(): void
@@ -186,10 +188,22 @@ final class SettingsTest extends TestCase
             'http://[::1]:8080',
             Settings::sanitize(['api_endpoint' => 'http://[::1]:8080'])['api_endpoint'],
         );
+    }
+
+    #[RunInSeparateProcess]
+    public function test_sanitize_accepts_plain_http_on_hosts_listed_in_the_constant(): void
+    {
+        define('TAKT_PLAINTEXT_HOSTS', ' host.docker.internal, takt.internal.test ,');
+
         $this->assertSame(
             'http://host.docker.internal:9911',
             Settings::sanitize(['api_endpoint' => 'http://host.docker.internal:9911'])['api_endpoint'],
         );
+        $this->assertSame(
+            'http://takt.internal.test',
+            Settings::sanitize(['script_origin' => 'http://takt.internal.test'])['script_origin'],
+        );
+        $this->assertSame('', Settings::sanitize(['api_endpoint' => 'http://other.example.com'])['api_endpoint']);
     }
 
     public function test_sanitize_folds_a_full_collect_url_back_to_its_ingest_origin(): void

@@ -84,6 +84,14 @@ define('TAKT_API_KEY', 'your-key');
 define('TAKT_SCRUB_URL', '(u) => u.split("#")[0]');
 ```
 
+### Plain `http` endpoints
+
+The ingest origin and the script origin must use `https`. Plain `http` is accepted for `localhost`, `127.0.0.1` and `[::1]` only. For a development setup that reaches Takt over another host, list the extra hosts in a constant (comma-separated, empty by default):
+
+```php
+define('TAKT_PLAINTEXT_HOSTS', 'takt.test, host.docker.internal');
+```
+
 ### Privacy
 
 WooCommerce purchase events are sent from your server to the configured Takt ingest origin and include the customer's IP address and user agent for attribution. They are forwarded, never logged by the plugin. The browser tracker honours `Do Not Track` (unless *Ignore Do-Not-Track* is on) and a `takt_ignore` localStorage opt-out.

@@ -11,7 +11,7 @@ final class Settings
     /** Chemin de collecte que core-php ajoute lui-même à l'origine d'ingestion. */
     private const INGEST_PATH = '/api/event';
 
-    private const PLAINTEXT_HOSTS = ['localhost', '127.0.0.1', '[::1]', 'host.docker.internal'];
+    private const LOOPBACK_HOSTS = ['localhost', '127.0.0.1', '[::1]'];
 
     /**
      * @param array<string,mixed> $raw
@@ -177,6 +177,16 @@ final class Settings
         return is_string($raw) ? $raw : '';
     }
 
+    /** @return list<string> */
+    private static function plaintextHosts(): array
+    {
+        $extra = \defined('TAKT_PLAINTEXT_HOSTS') ? \constant('TAKT_PLAINTEXT_HOSTS') : '';
+        $hosts = array_map(static fn (string $host): string => strtolower(trim($host)), explode(',', self::toCsv($extra)));
+        $hosts = array_filter($hosts, static fn (string $host): bool => $host !== '');
+
+        return array_values(array_unique([...self::LOOPBACK_HOSTS, ...$hosts]));
+    }
+
     private static function sanitizeUrl(mixed $raw): string
     {
         if (!is_string($raw) || ($url = trim($raw)) === '') {
@@ -185,7 +195,7 @@ final class Settings
         $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
         $host = strtolower((string) parse_url($url, PHP_URL_HOST));
         $isSecure = $scheme === 'https';
-        $isLocalPlaintext = $scheme === 'http' && in_array($host, self::PLAINTEXT_HOSTS, true);
+        $isLocalPlaintext = $scheme === 'http' && in_array($host, self::plaintextHosts(), true);
         if ($host === '' || !($isSecure || $isLocalPlaintext)) {
             return '';
         }
