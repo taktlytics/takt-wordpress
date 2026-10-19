@@ -68,3 +68,27 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+  package:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Build the release ZIP
+        run: bin/build.sh
+
+      - name: Upload the release ZIP
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: takt-analytics-zip
+          path: dist/takt-analytics.zip
+          if-no-files-found: error
