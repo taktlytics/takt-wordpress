@@ -24,12 +24,17 @@ cp vendor/sniccowp/php-scoper-wordpress-excludes/generated/*.json "$ROOT/.scoper
 echo "==> Installing production dependencies"
 composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
 
-if [ ! -f "$SCOPER" ]; then
+verify_scoper() {
+  echo "$SCOPER_SHA256  $SCOPER" | sha256sum --check --status
+}
+
+if [ ! -f "$SCOPER" ] || ! verify_scoper; then
   echo "==> Downloading php-scoper $SCOPER_VERSION"
+  rm -f "$SCOPER"
   curl -fsSL "$SCOPER_URL" -o "$SCOPER"
 fi
 
-if ! echo "$SCOPER_SHA256  $SCOPER" | sha256sum --check --status; then
+if ! verify_scoper; then
   rm -f "$SCOPER"
   echo "php-scoper $SCOPER_VERSION checksum mismatch, refusing to run it" >&2
   exit 1
