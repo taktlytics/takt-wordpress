@@ -53,7 +53,31 @@ final class AdminPage
             }
         }
 
-        return Settings::sanitize($raw);
+        $clean = Settings::sanitize($raw);
+        foreach (['api_endpoint' => 'Origine d\'ingestion', 'script_origin' => 'Origine du script'] as $key => $label) {
+            $submitted = is_string($raw[$key] ?? null) ? trim($raw[$key]) : '';
+            if ($submitted !== '' && $clean[$key] === '') {
+                \add_settings_error(
+                    Plugin::OPTION,
+                    'takt_' . $key,
+                    $label . ' : URL refusée. Seul https est accepté, http est réservé à localhost.',
+                    'error',
+                );
+            }
+        }
+
+        return $clean;
+    }
+
+    public static function keyStorageNotice(bool $locked, string $storedKey): string
+    {
+        if ($locked || $storedKey === '') {
+            return '';
+        }
+
+        return '<div class="notice notice-warning"><p>'
+            . \esc_html('La clé API est enregistrée dans les options WordPress. Définissez la constante TAKT_API_KEY dans wp-config.php pour la retirer de la base de données.')
+            . '</p></div>';
     }
 
     public function render(): void
@@ -66,7 +90,9 @@ final class AdminPage
         $keyLocked = \defined('TAKT_API_KEY');
         $hasKey = $keyLocked || ($s['api_key'] ?? '') !== '';
 
-        echo '<div class="wrap"><h1>Takt Analytics</h1><form method="post" action="options.php">';
+        echo '<div class="wrap"><h1>Takt Analytics</h1>'
+            . self::keyStorageNotice($keyLocked, (string) $s['api_key'])
+            . '<form method="post" action="options.php">';
         \settings_fields(self::GROUP);
         echo '<table class="form-table" role="presentation">';
 
