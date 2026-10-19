@@ -124,7 +124,7 @@ final class AdminPage
     private static function ignoredUrlMessage(string $key): string
     {
         $message = self::URL_LABELS[$key]
-            . " : l'URL enregistrée en http a été ignorée. Passez-la en https pour la réactiver (http est réservé à localhost).";
+            . " : l'URL enregistrée n'est pas acceptée (https requis, http réservé à localhost).";
 
         return $key === 'api_endpoint'
             ? $message . ' Tant qu\'elle n\'est pas corrigée, l\'envoi des achats WooCommerce est interrompu.'
@@ -249,9 +249,7 @@ final class AdminPage
         );
     }
 
-    /**
-     * @param array<string,string> $choices
-     */
+    /** @param array<string,string> $choices */
     private function selectRow(string $key, string $label, string $value, array $choices): void
     {
         printf(

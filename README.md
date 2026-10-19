@@ -89,7 +89,7 @@ define('TAKT_SCRUB_URL', '(u) => u.split("#")[0]');
 The ingest origin and the script origin must use `https`. Plain `http` is accepted for `localhost`, `127.0.0.1` and `[::1]` only. For a development setup that reaches Takt over another host, list the extra hosts in a constant (comma-separated, empty by default):
 
 ```php
-define('TAKT_PLAINTEXT_HOSTS', 'takt.test, host.docker.internal');
+define('TAKT_PLAINTEXT_HOSTS', 'takt.test, dev.example.test');
 ```
 
 ### Privacy

@@ -91,7 +91,7 @@ final class AdminPageTest extends TestCase
 
         $this->assertSame(['api_endpoint'], AdminPage::ignoredUrlKeys(['api_endpoint' => 'http://takt.example.com']));
         $this->assertStringContainsString('notice-error', $notice);
-        $this->assertStringContainsString('ignorée', $notice);
+        $this->assertStringContainsString('pas acceptée', $notice);
         $this->assertStringContainsString('https', $notice);
         $this->assertStringContainsString('WooCommerce', $notice);
     }
