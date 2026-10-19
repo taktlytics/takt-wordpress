@@ -11,6 +11,8 @@ final class Settings
     /** Chemin de collecte que core-php ajoute lui-même à l'origine d'ingestion. */
     private const INGEST_PATH = '/api/event';
 
+    private const PLAINTEXT_HOSTS = ['localhost', '127.0.0.1', '[::1]', 'host.docker.internal'];
+
     /**
      * @param array<string,mixed> $raw
      * @return array<string,mixed>
@@ -175,14 +177,16 @@ final class Settings
         return is_string($raw) ? $raw : '';
     }
 
-    /** A http(s) URL with a host, trailing slash dropped — else ''. */
     private static function sanitizeUrl(mixed $raw): string
     {
         if (!is_string($raw) || ($url = trim($raw)) === '') {
             return '';
         }
         $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
-        if (!in_array($scheme, ['http', 'https'], true) || parse_url($url, PHP_URL_HOST) === null) {
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+        $isSecure = $scheme === 'https';
+        $isLocalPlaintext = $scheme === 'http' && in_array($host, self::PLAINTEXT_HOSTS, true);
+        if ($host === '' || !($isSecure || $isLocalPlaintext)) {
             return '';
         }
 
