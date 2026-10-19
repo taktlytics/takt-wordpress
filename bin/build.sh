@@ -9,7 +9,9 @@ SLUG="takt-analytics"
 BUILD="$ROOT/build"
 DIST="$ROOT/dist"
 SCOPER="$ROOT/bin/php-scoper.phar"
-SCOPER_URL="https://github.com/humbug/php-scoper/releases/latest/download/php-scoper.phar"
+SCOPER_VERSION="0.18.20"
+SCOPER_SHA256="5e35e4a89ea53b2c70a19bfa8a856e4f9080aa12eb13a5bce650bb69d08eb122"
+SCOPER_URL="https://github.com/humbug/php-scoper/releases/download/${SCOPER_VERSION}/php-scoper.phar"
 
 rm -rf "$BUILD" "$DIST"
 mkdir -p "$DIST"
@@ -23,8 +25,14 @@ echo "==> Installing production dependencies"
 composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
 
 if [ ! -f "$SCOPER" ]; then
-  echo "==> Downloading php-scoper"
+  echo "==> Downloading php-scoper $SCOPER_VERSION"
   curl -fsSL "$SCOPER_URL" -o "$SCOPER"
+fi
+
+if ! echo "$SCOPER_SHA256  $SCOPER" | sha256sum --check --status; then
+  rm -f "$SCOPER"
+  echo "php-scoper $SCOPER_VERSION checksum mismatch, refusing to run it" >&2
+  exit 1
 fi
 
 echo "==> Scoping dependencies into build/ (prefix Takt\\WP\\Vendor)"
