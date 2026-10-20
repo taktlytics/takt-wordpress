@@ -40,8 +40,14 @@ jobs:
           name: takt-analytics-zip
           path: dist
 
-      - name: Publish release
+      - name: Create the draft release with the ZIP
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
+          draft: true
           files: dist/takt-analytics.zip
           generate_release_notes: true
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft=false

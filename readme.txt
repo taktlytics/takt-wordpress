@@ -4,7 +4,7 @@ Tags: analytics, privacy, woocommerce, statistics, tracking
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 8.1
-Stable tag: 0.5.1
+Stable tag: 0.5.2
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
@@ -55,6 +55,10 @@ In the WordPress options table, or in a wp-config.php constant (TAKT_API_KEY) wh
 
 == Changelog ==
 
+= 0.5.2 =
+* Fix: from 0.4.0 to 0.5.1, the tracker stopped sending events after the first pageview. The bundled tracker overwrote window.takt when it loaded, so later events were rejected by the ingest with a 400, and takt('Event') threw an error. Updating to 0.5.2 is enough: no setting to change. Sites that rolled back to 0.3.3 can update straight to this release.
+* The bundled takt-core-php moves to 0.7.3, which loads takt-core 0.12.3 and carries the tracker fix.
+
 = 0.5.1 =
 * The bundled takt-core-php moves to 0.7.2, which loads takt-core 0.12.2. Its default download extensions now include doc and ppt: when the Extensions setting is left empty, downloads of .doc and .ppt files are tracked too.
 
@@ -98,6 +102,9 @@ In the WordPress options table, or in a wp-config.php constant (TAKT_API_KEY) wh
 * Initial release: snippet injection and WooCommerce server-to-server purchase events.
 
 == Upgrade Notice ==
+
+= 0.5.2 =
+Fixes event tracking broken since 0.4.0: events after the first pageview were rejected and takt('Event') threw. No settings change, update to 0.5.2.
 
 = 0.5.1 =
 Ships takt-core-php 0.7.2 (takt-core 0.12.2). No settings change; .doc and .ppt downloads are now tracked when the Extensions setting is empty.
