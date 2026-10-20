@@ -4,7 +4,7 @@
     "https://downloads.wordpress.org/plugin/woocommerce.zip"
   ],
   "config": {
-    "WP_DEBUG": true
+    "WP_DEBUG": true,
     "WP_DEBUG_LOG": true
   }
 }
