@@ -35,4 +35,21 @@ final class SnippetInjectorTest extends TestCase
 
         $this->assertStringContainsString('nonce="nonce-xyz"', $html);
     }
+
+    public function test_markup_hands_redacted_routes_to_the_sdk_only(): void
+    {
+        $sdk = SnippetInjector::markup([
+            'domain' => 'example.com',
+            'mode' => 'sdk',
+            'redact_routes' => ['/verify/{token}'],
+        ]);
+        $cdn = SnippetInjector::markup([
+            'domain' => 'example.com',
+            'mode' => 'cdn',
+            'redact_routes' => ['/verify/{token}'],
+        ]);
+
+        $this->assertStringContainsString('"redactRoutes":["\\/verify\\/[token]"]', $sdk);
+        $this->assertStringNotContainsString('redactRoutes', $cdn);
+    }
 }

@@ -64,7 +64,7 @@ final class AdminPage
             \add_settings_error(
                 Plugin::OPTION,
                 'takt_' . $key,
-                self::URL_LABELS[$key] . ' : URL refusée. Seul https est accepté, http est réservé à localhost.',
+                self::URL_LABELS[$key] . ' : URL refusée. Seul https est accepté.',
                 'error',
             );
         }
@@ -124,7 +124,7 @@ final class AdminPage
     private static function ignoredUrlMessage(string $key): string
     {
         $message = self::URL_LABELS[$key]
-            . " : l'URL enregistrée n'est pas acceptée (https requis, http réservé à localhost).";
+            . " : l'URL enregistrée n'est pas acceptée (https requis).";
 
         return $key === 'api_endpoint'
             ? $message . ' Tant qu\'elle n\'est pas corrigée, l\'envoi des achats WooCommerce est interrompu.'
@@ -189,6 +189,13 @@ final class AdminPage
         $this->checkboxRow('track_query', 'Conserver la query string', $s['track_query']);
         $this->textRow('query_params', 'Paramètres de requête conservés', implode(', ', $s['query_params']), 'utm_source, utm_medium');
         $this->textRow('exclude', 'Chemins exclus du suivi (mode SDK)', implode(', ', $s['exclude']), '/app, /account');
+        $this->textRow(
+            'redact_routes',
+            'Routes masquées (mode SDK)',
+            implode(', ', $s['redact_routes']),
+            '/verify/{token}, /reset/{code}',
+            'Les pages qui correspondent à une route sont envoyées sous son gabarit, sans la valeur réelle des segments.',
+        );
         $this->checkboxRow('ignore_dnt', 'Ignorer Do-Not-Track', $s['ignore_dnt']);
         $this->checkboxRow('disable_tracking', 'Suspendre le suivi', $s['disable_tracking']);
 

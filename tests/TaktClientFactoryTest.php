@@ -60,4 +60,13 @@ final class TaktClientFactoryTest extends TestCase
 
         $this->assertSame('https://taktlytics.com/api/event', (string) $client->lastRequest->getUri());
     }
+
+    public function test_returns_null_instead_of_throwing_when_core_php_refuses_a_plain_http_endpoint(): void
+    {
+        $this->assertNull(TaktClientFactory::fromSettings([
+            'api_endpoint' => 'http://localhost:9911',
+            'domain' => 'shop.example.com',
+            'api_key' => 'secret',
+        ]));
+    }
 }

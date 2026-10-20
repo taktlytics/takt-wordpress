@@ -51,6 +51,26 @@ final class SettingsTest extends TestCase
         $this->assertSame([], Settings::sanitize([])['query_params']);
     }
 
+    public function test_sanitize_parses_redact_routes_keeping_constraint_commas(): void
+    {
+        $out = Settings::sanitize([
+            'redact_routes' => '/verify/{token}, /reset/{code<\\d{1,3}>}, not-a-route, /bad space, <script>, /ok',
+        ]);
+
+        $this->assertSame(['/verify/{token}', '/reset/{code<\\d{1,3}>}', '/ok'], $out['redact_routes']);
+        $this->assertSame([], Settings::sanitize([])['redact_routes']);
+        $this->assertSame($out['redact_routes'], Settings::sanitize($out)['redact_routes']);
+    }
+
+    public function test_to_options_passes_redact_routes_only_in_sdk_mode(): void
+    {
+        $sdk = Settings::toOptions(['domain' => 'example.com', 'mode' => 'sdk', 'redact_routes' => ['/verify/{token}']]);
+        $cdn = Settings::toOptions(['domain' => 'example.com', 'mode' => 'cdn', 'redact_routes' => ['/verify/{token}']]);
+
+        $this->assertSame(['/verify/{token}'], $sdk->redactRoutes);
+        $this->assertSame([], $cdn->redactRoutes);
+    }
+
     public function test_sanitize_parses_exclude_paths(): void
     {
         $out = Settings::sanitize(['exclude' => '/app, /account/settings , not-a-path,bad path,/a_b-c/,,']);
@@ -161,7 +181,7 @@ final class SettingsTest extends TestCase
         $this->assertSame('', $bad['script_origin']);
     }
 
-    public function test_sanitize_rejects_plain_http_urls_outside_loopback(): void
+    public function test_sanitize_rejects_plain_http_urls_even_on_loopback(): void
     {
         $out = Settings::sanitize([
             'api_endpoint' => 'http://takt.example.com',
@@ -170,40 +190,17 @@ final class SettingsTest extends TestCase
 
         $this->assertSame('', $out['api_endpoint']);
         $this->assertSame('', $out['script_origin']);
-        $this->assertSame('', Settings::sanitize(['script_origin' => 'http://localhost.example.com'])['script_origin']);
-        $this->assertSame('', Settings::sanitize(['api_endpoint' => 'http://host.docker.internal:9911'])['api_endpoint']);
-    }
-
-    public function test_sanitize_accepts_plain_http_on_loopback_hosts(): void
-    {
-        $this->assertSame(
-            'http://localhost:9911',
-            Settings::sanitize(['api_endpoint' => 'http://localhost:9911/'])['api_endpoint'],
-        );
-        $this->assertSame(
-            'http://127.0.0.1:8080',
-            Settings::sanitize(['script_origin' => 'http://127.0.0.1:8080'])['script_origin'],
-        );
-        $this->assertSame(
-            'http://[::1]:8080',
-            Settings::sanitize(['api_endpoint' => 'http://[::1]:8080'])['api_endpoint'],
-        );
+        $this->assertSame('', Settings::sanitize(['api_endpoint' => 'http://localhost:9911'])['api_endpoint']);
+        $this->assertSame('', Settings::sanitize(['script_origin' => 'http://127.0.0.1:8080'])['script_origin']);
+        $this->assertSame('', Settings::sanitize(['api_endpoint' => 'http://[::1]:8080'])['api_endpoint']);
     }
 
     #[RunInSeparateProcess]
-    public function test_sanitize_accepts_plain_http_on_hosts_listed_in_the_constant(): void
+    public function test_sanitize_ignores_the_former_plaintext_hosts_constant(): void
     {
-        define('TAKT_PLAINTEXT_HOSTS', ' host.docker.internal, takt.internal.test ,');
+        define('TAKT_PLAINTEXT_HOSTS', 'host.docker.internal');
 
-        $this->assertSame(
-            'http://host.docker.internal:9911',
-            Settings::sanitize(['api_endpoint' => 'http://host.docker.internal:9911'])['api_endpoint'],
-        );
-        $this->assertSame(
-            'http://takt.internal.test',
-            Settings::sanitize(['script_origin' => 'http://takt.internal.test'])['script_origin'],
-        );
-        $this->assertSame('', Settings::sanitize(['api_endpoint' => 'http://other.example.com'])['api_endpoint']);
+        $this->assertSame('', Settings::sanitize(['api_endpoint' => 'http://host.docker.internal:9911'])['api_endpoint']);
     }
 
     public function test_sanitize_folds_a_full_collect_url_back_to_its_ingest_origin(): void

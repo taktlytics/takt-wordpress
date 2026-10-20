@@ -11,7 +11,7 @@ final class Settings
     /** Chemin de collecte que core-php ajoute lui-même à l'origine d'ingestion. */
     private const INGEST_PATH = '/api/event';
 
-    private const LOOPBACK_HOSTS = ['localhost', '127.0.0.1', '[::1]'];
+    private const MAX_ROUTE_LENGTH = 200;
 
     /**
      * @param array<string,mixed> $raw
@@ -39,6 +39,7 @@ final class Settings
             'track_query' => !empty($raw['track_query']),
             'query_params' => self::parseParams($raw['query_params'] ?? ''),
             'exclude' => self::parsePaths($raw['exclude'] ?? ''),
+            'redact_routes' => self::parseRoutes($raw['redact_routes'] ?? ''),
             'ignore_dnt' => !empty($raw['ignore_dnt']),
             'disable_tracking' => !empty($raw['disable_tracking']),
             'woocommerce' => !empty($raw['woocommerce']),
@@ -70,6 +71,7 @@ final class Settings
         // in sdk mode, core-php throws if it is set otherwise. Drop it outside
         // sdk (or when empty) so the admin can't fatal every page.
         $exclude = is_array($s['exclude'] ?? null) ? $s['exclude'] : [];
+        $redactRoutes = is_array($s['redact_routes'] ?? null) ? $s['redact_routes'] : [];
 
         $args = [
             'domain' => $s['domain'] ?? '',
@@ -92,6 +94,9 @@ final class Settings
 
         if ($mode === 'sdk' && $exclude !== []) {
             $args['exclude'] = $exclude;
+        }
+        if ($mode === 'sdk' && $redactRoutes !== []) {
+            $args['redactRoutes'] = $redactRoutes;
         }
 
         return Options::fromArray($args);
@@ -149,6 +154,20 @@ final class Settings
         return $out;
     }
 
+    /** @return list<string> */
+    private static function parseRoutes(mixed $raw): array
+    {
+        $out = [];
+        foreach (preg_split('#,(?![^{}<>]*[}>])#', self::toCsv($raw)) ?: [] as $part) {
+            $route = trim($part);
+            if ($route !== '' && strlen($route) <= self::MAX_ROUTE_LENGTH && preg_match('#^/[A-Za-z0-9_\-./:*+?{}\[\]()<>|\\\\,=]*\z#', $route)) {
+                $out[] = $route;
+            }
+        }
+
+        return $out;
+    }
+
     /**
      * L'origine d'ingestion serveur-à-serveur : core-php lui ajoute
      * « /api/event » à chaque envoi. Le réglage accepte donc les deux formes :
@@ -177,26 +196,14 @@ final class Settings
         return is_string($raw) ? $raw : '';
     }
 
-    /** @return list<string> */
-    private static function plaintextHosts(): array
-    {
-        $extra = \defined('TAKT_PLAINTEXT_HOSTS') ? \constant('TAKT_PLAINTEXT_HOSTS') : '';
-        $hosts = array_map(static fn (string $host): string => strtolower(trim($host)), explode(',', self::toCsv($extra)));
-        $hosts = array_filter($hosts, static fn (string $host): bool => $host !== '');
-
-        return array_values(array_unique([...self::LOOPBACK_HOSTS, ...$hosts]));
-    }
-
     private static function sanitizeUrl(mixed $raw): string
     {
         if (!is_string($raw) || ($url = trim($raw)) === '') {
             return '';
         }
         $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
-        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
-        $isSecure = $scheme === 'https';
-        $isLocalPlaintext = $scheme === 'http' && in_array($host, self::plaintextHosts(), true);
-        if ($host === '' || !($isSecure || $isLocalPlaintext)) {
+        $host = (string) parse_url($url, PHP_URL_HOST);
+        if ($scheme !== 'https' || $host === '') {
             return '';
         }
 

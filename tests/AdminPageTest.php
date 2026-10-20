@@ -96,12 +96,22 @@ final class AdminPageTest extends TestCase
         $this->assertStringContainsString('WooCommerce', $notice);
     }
 
-    public function test_ignored_url_notice_is_silent_for_https_loopback_or_blank_values(): void
+    public function test_ignored_url_notice_is_silent_for_https_or_blank_values(): void
     {
         Functions\stubEscapeFunctions();
 
-        $this->assertSame('', AdminPage::ignoredUrlNotice(['api_endpoint' => 'https://taktlytics.com', 'script_origin' => 'http://localhost:8080']));
+        $this->assertSame('', AdminPage::ignoredUrlNotice(['api_endpoint' => 'https://taktlytics.com', 'script_origin' => 'https://cdn.example.com']));
         $this->assertSame('', AdminPage::ignoredUrlNotice([]));
+    }
+
+    public function test_ignored_url_notice_reports_a_stored_plain_http_loopback_origin(): void
+    {
+        Functions\stubEscapeFunctions();
+
+        $notice = AdminPage::ignoredUrlNotice(['api_endpoint' => 'http://localhost:9911']);
+
+        $this->assertStringContainsString('https requis', $notice);
+        $this->assertStringContainsString('interrompu', $notice);
     }
 
     public function test_renderer_shows_the_ignored_url_notice_to_administrators_outside_the_settings_screen(): void
