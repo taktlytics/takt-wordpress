@@ -11,9 +11,8 @@ use Vskstudio\Takt\WordPress\Http\WpRemotePostClient;
 
 /**
  * Builds the core-php S2S client from stored settings, over WordPress' own HTTP
- * layer. Returns null when ingest is not configured (no origin or key), or when
- * core-php refuses the origin (anything but https), so the plugin simply skips
- * server-side events instead of erroring on every page load.
+ * layer. Returns null when ingest is not configured (no origin or key), so the
+ * plugin simply skips server-side events instead of erroring.
  *
  * `api_endpoint` is an ingest *origin* (e.g. `https://taktlytics.com`), not a
  * collect URL: core-php appends `/api/event` on every send. Pass settings that
