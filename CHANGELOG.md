@@ -1,5 +1,17 @@
 # Takt Analytics for WordPress
 
+## 0.5.2
+
+- **Fix**: since 0.4.0, the tracker stopped working after the first pageview.
+  The bundled `takt.auto.js` of `vskstudio/takt-core-php` overwrote `window.takt`
+  and its `takt_mask` when it loaded, so every later event was sent with an
+  empty `u` field, which the ingest rejects with a `400`, and a call to
+  `takt('Event')` threw an error. Versions 0.4.0 to 0.5.1 are affected. Updating
+  to 0.5.2 is enough: there is no setting to change, and a site that rolled back
+  to 0.3.3 can update straight to this release.
+- The bundled `vskstudio/takt-core-php` moves to 0.7.3, which loads
+  `@vskstudio/takt-core` 0.12.3 and carries the tracker fix.
+
 ## 0.5.1
 
 - The bundled `vskstudio/takt-core-php` moves to 0.7.2, which loads
