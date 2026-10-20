@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3b74ebebdc56a623e5ecd1e3e748beb8",
+    "content-hash": "29dcb6b39efffd2b79da0a888e163422",
     "packages": [
         {
             "name": "nyholm/psr7",
@@ -325,16 +325,16 @@
         },
         {
             "name": "vskstudio/takt-core-php",
-            "version": "v0.7.0",
+            "version": "v0.7.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/taktlytics/takt-core-php.git",
-                "reference": "92746b48c182d454f492e7c72f5579578e8841b0"
+                "reference": "cfc9ec4db0a2adaacbd673072b1ffccb156bd85c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/taktlytics/takt-core-php/zipball/92746b48c182d454f492e7c72f5579578e8841b0",
-                "reference": "92746b48c182d454f492e7c72f5579578e8841b0",
+                "url": "https://api.github.com/repos/taktlytics/takt-core-php/zipball/cfc9ec4db0a2adaacbd673072b1ffccb156bd85c",
+                "reference": "cfc9ec4db0a2adaacbd673072b1ffccb156bd85c",
                 "shasum": ""
             },
             "require": {
@@ -379,7 +379,7 @@
                 "issues": "https://github.com/taktlytics/takt-core-php/issues",
                 "source": "https://github.com/taktlytics/takt-core-php"
             },
-            "time": "2026-10-20T06:24:26+00:00"
+            "time": "2026-10-20T08:26:52+00:00"
         }
     ],
     "packages-dev": [

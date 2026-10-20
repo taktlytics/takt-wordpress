@@ -2,8 +2,8 @@
 
 ## 0.5.0
 
-- The bundled `vskstudio/takt-core-php` moves to 0.7.0, which loads
-  `@vskstudio/takt-core` 0.12.0.
+- The bundled `vskstudio/takt-core-php` moves to 0.7.1, which loads
+  `@vskstudio/takt-core` 0.12.1.
 - **Breaking for local development**: the ingest origin and the script origin
   must use `https`, `localhost` included. `takt-core-php` 0.7 refuses any other
   endpoint, so a stored `http://` value is ignored on save and on read, the
@@ -25,7 +25,14 @@
 - New **Route templates** setting (SDK mode): every page is sent under a
   template, never its raw path. The template comes from the `takt_route_template`
   filter; without one it is `/` on the front page, `/{post_type}/{slug}` on a
-  single post or page, and `/[redacted]` elsewhere.
+  single post or page, and `/[redacted]` elsewhere. Download tracking is off in
+  this mode, because the template does not reach download destinations.
+- In template mode a page URL is never sent raw. When the template cannot be
+  resolved, the URL goes out under the **Redacted routes** pattern if one
+  covers it, otherwise as its origin and `/[redacted]`. A URL that cannot be read
+  reliably (backslash, control character, surrounding spaces, user information,
+  a host that is not DNS-compatible) goes out with an empty `u`, which the ingest
+  refuses. A referrer is always reduced to its origin, whatever its host.
 - The admin screen strings are translatable (text domain `takt-analytics`,
   French source).
 

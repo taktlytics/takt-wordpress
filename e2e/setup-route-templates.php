@@ -1,11 +1,7 @@
 <?php
 
-require_once ABSPATH . 'wp-admin/includes/misc.php';
-require_once ABSPATH . 'wp-admin/includes/file.php';
-
-update_option('permalink_structure', '/%postname%/');
+update_option('permalink_structure', '/index.php/%postname%/');
 flush_rewrite_rules(true);
-insert_with_markers(get_home_path() . '.htaccess', 'WordPress', explode("\n", $GLOBALS['wp_rewrite']->mod_rewrite_rules()));
 
 update_option('takt_settings', [
     'domain' => 'localhost',

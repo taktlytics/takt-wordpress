@@ -4,8 +4,8 @@ const mock = `https://localhost:${process.env.MOCK_INGEST_PORT || 9911}`;
 const rawSegment = 'takt-e2e-token-42';
 
 const cases = [
-  { name: 'an unknown path', visit: `/${rawSegment}`, template: '/[redacted]', hides: rawSegment },
-  { name: 'a single post', visit: '/takt-e2e-article/', template: '/%7Bpost_type%7D/%7Bslug%7D', hides: 'takt-e2e-article' },
+  { name: 'an unknown path', visit: `/index.php/${rawSegment}`, template: '/[redacted]', hides: rawSegment },
+  { name: 'a single post', visit: '/index.php/takt-e2e-article/', template: '/%7Bpost_type%7D/%7Bslug%7D', hides: 'takt-e2e-article' },
   { name: 'the home page', visit: '/', template: '/', hides: null },
 ];
 
