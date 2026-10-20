@@ -4,7 +4,7 @@ Tags: analytics, privacy, woocommerce, statistics, tracking
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 8.1
-Stable tag: 0.4.0
+Stable tag: 0.5.0
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
@@ -55,6 +55,11 @@ In the WordPress options table, or in a wp-config.php constant (TAKT_API_KEY) wh
 
 == Changelog ==
 
+= 0.5.0 =
+* The bundled takt-core-php moves to 0.7.0, which loads takt-core 0.12.0. The ingest origin and the script origin must now use https, localhost included: plain http values are ignored, an admin notice names the setting, and the TAKT_PLAINTEXT_HOSTS constant no longer has any effect.
+* New setting Redacted routes (SDK mode): route patterns such as /verify/{token} are sent as their pattern instead of the real path. Constraints such as {code<\d{1,3}>} are supported.
+* With an http origin, the server-to-server client is no longer built, so a misconfigured origin cannot break page loads.
+
 = 0.4.0 =
 * The Script origin and Ingest origin settings accept https only (plain http stays allowed for localhost, 127.0.0.1 and [::1], or for hosts listed in the TAKT_PLAINTEXT_HOSTS constant). A stored ingest origin that is no longer accepted is ignored and an admin notice says so.
 * The admin screen warns when the API key is stored in the database rather than in the TAKT_API_KEY constant.
@@ -85,6 +90,9 @@ In the WordPress options table, or in a wp-config.php constant (TAKT_API_KEY) wh
 * Initial release: snippet injection and WooCommerce server-to-server purchase events.
 
 == Upgrade Notice ==
+
+= 0.5.0 =
+The ingest and script origins must use https, localhost included. A plain http origin is now ignored: switch it to https, or WooCommerce purchases stop arriving.
 
 = 0.4.0 =
 The ingest and script origins must use https. If WooCommerce purchases stop arriving, check Settings → Takt Analytics for a plain http origin.

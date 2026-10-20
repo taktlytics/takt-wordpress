@@ -1,5 +1,21 @@
 # Takt Analytics for WordPress
 
+## 0.5.0
+
+- The bundled `vskstudio/takt-core-php` moves to 0.7.0, which loads
+  `@vskstudio/takt-core` 0.12.0.
+- **Breaking for local development**: the ingest origin and the script origin
+  must use `https`, `localhost` included. `takt-core-php` 0.7 refuses any other
+  endpoint, so a stored `http://` value is ignored on save and on read, the
+  admin field comes back empty and a notice names the setting. The
+  `TAKT_PLAINTEXT_HOSTS` constant has no effect any more and is removed from the
+  docs. The server-to-server client is no longer built from a refused origin, so
+  a misconfigured origin never breaks page loads.
+- New **Redacted routes** setting (SDK mode, comma-separated): route patterns
+  such as `/verify/{token}` are sent as their pattern instead of the real path,
+  and segment constraints like `{code<\d{1,3}>}` are honoured. Like **Excluded
+  paths**, it is dropped in the other modes.
+
 ## 0.4.0
 
 - The bundled `vskstudio/takt-core-php` moves to 0.6.1, which pins and vendors
