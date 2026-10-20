@@ -1,11 +1,29 @@
 // Minimal Takt ingest stand-in for E2E: records POST /api/event payloads and
 // exposes them over GET /__events so specs can assert what the plugin sent.
-const http = require('http');
+const https = require('node:https');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { execFileSync } = require('node:child_process');
 
 const port = Number(process.env.MOCK_INGEST_PORT || 9911);
 const events = [];
 
-const server = http.createServer((req, res) => {
+const certDir = fs.mkdtempSync(path.join(os.tmpdir(), 'takt-mock-ingest-'));
+const keyPath = path.join(certDir, 'key.pem');
+const certPath = path.join(certDir, 'cert.pem');
+execFileSync(
+  'openssl',
+  [
+    'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1',
+    '-subj', '/CN=localhost',
+    '-addext', 'subjectAltName=DNS:localhost,DNS:host.docker.internal',
+    '-keyout', keyPath, '-out', certPath,
+  ],
+  { stdio: 'ignore' },
+);
+
+const server = https.createServer({ key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) }, (req, res) => {
   if (req.method === 'POST' && req.url.startsWith('/api/event')) {
     let body = '';
     req.on('data', (chunk) => {

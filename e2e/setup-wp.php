@@ -11,7 +11,7 @@ update_option('takt_settings', [
     'outbound' => true,
     'woocommerce' => true,
     'wc_trigger_status' => 'completed',
-    'api_endpoint' => 'http://host.docker.internal:9911',
+    'api_endpoint' => 'https://host.docker.internal:9911',
     'api_key' => 'e2e-key',
 ]);
 

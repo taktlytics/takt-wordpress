@@ -4,8 +4,7 @@
     "https://downloads.wordpress.org/plugin/woocommerce.zip"
   ],
   "config": {
-    "WP_DEBUG": true,
-    "WP_DEBUG_LOG": true,
-    "TAKT_PLAINTEXT_HOSTS": "host.docker.internal"
+    "WP_DEBUG": true
+    "WP_DEBUG_LOG": true
   }
 }
