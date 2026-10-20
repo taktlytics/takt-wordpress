@@ -4,7 +4,7 @@ Tags: analytics, privacy, woocommerce, statistics, tracking
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 8.1
-Stable tag: 0.5.0
+Stable tag: 0.5.1
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
@@ -55,6 +55,9 @@ In the WordPress options table, or in a wp-config.php constant (TAKT_API_KEY) wh
 
 == Changelog ==
 
+= 0.5.1 =
+* The bundled takt-core-php moves to 0.7.2, which loads takt-core 0.12.2. Its default download extensions now include doc and ppt: when the Extensions setting is left empty, downloads of .doc and .ppt files are tracked too.
+
 = 0.5.0 =
 * The bundled takt-core-php moves to 0.7.1, which loads takt-core 0.12.1. The ingest origin and the script origin must now use https, localhost included: plain http values are ignored, an admin notice names the setting, and the TAKT_PLAINTEXT_HOSTS constant no longer has any effect.
 * New setting Redacted routes (SDK mode): route patterns such as /verify/{token} are sent as their pattern instead of the real path. Constraints such as {code<\d{1,3}>} are supported. A value that breaks its constraint is not masked (/reset/1234 with {code<\d{1,3}>} is sent in clear), and the pattern /* rewrites every page: do not use it.
@@ -95,6 +98,9 @@ In the WordPress options table, or in a wp-config.php constant (TAKT_API_KEY) wh
 * Initial release: snippet injection and WooCommerce server-to-server purchase events.
 
 == Upgrade Notice ==
+
+= 0.5.1 =
+Ships takt-core-php 0.7.2 (takt-core 0.12.2). No settings change; .doc and .ppt downloads are now tracked when the Extensions setting is empty.
 
 = 0.5.0 =
 The ingest and script origins must use https, localhost included. A plain http origin is now ignored: switch it to https. A refused script origin suspends the tracking until it is fixed, and a refused ingest origin stops WooCommerce purchases from arriving.
