@@ -6,8 +6,9 @@
     "env:start": "wp-env start",
     "env:stop": "wp-env stop",
     "env:clean": "wp-env destroy",
-    "e2e": "wp-env start && wp-env run cli wp eval-file wp-content/plugins/takt-wordpress/e2e/setup-wp.php && playwright test",
-    "e2e:run": "playwright test"
+    "e2e": "wp-env start && wp-env run cli wp eval-file wp-content/plugins/takt-wordpress/e2e/setup-wp.php && playwright test --grep-invert @route-templates && npm run e2e:route-templates",
+    "e2e:run": "playwright test",
+    "e2e:route-templates": "wp-env run cli wp eval-file wp-content/plugins/takt-wordpress/e2e/setup-route-templates.php && playwright test --grep @route-templates"
   },
   "devDependencies": {
     "@playwright/test": "^1.48.0",

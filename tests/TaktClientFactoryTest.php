@@ -60,4 +60,48 @@ final class TaktClientFactoryTest extends TestCase
 
         $this->assertSame('https://taktlytics.com/api/event', (string) $client->lastRequest->getUri());
     }
+
+    public function test_returns_null_instead_of_throwing_when_core_php_refuses_a_plain_http_endpoint(): void
+    {
+        $this->assertNull(TaktClientFactory::fromSettings([
+            'api_endpoint' => 'http://localhost:9911',
+            'domain' => 'shop.example.com',
+            'api_key' => 'secret',
+        ]));
+    }
+
+    public function test_server_to_server_events_honour_the_redact_routes_in_sdk_mode(): void
+    {
+        $client = new CapturingClient();
+        $takt = TaktClientFactory::fromSettings(Settings::sanitize([
+            'api_endpoint' => 'https://takt.example.com',
+            'domain' => 'shop.example.com',
+            'api_key' => 'secret',
+            'mode' => 'sdk',
+            'redact_routes' => '/verify/{token}',
+        ]), $client);
+
+        $this->assertInstanceOf(Takt::class, $takt);
+        $takt->event('Purchase', [], null, 'https://shop.example.com/verify/abc123secret');
+
+        $this->assertStringNotContainsString('abc123secret', $client->lastPayload()['u']);
+        $this->assertStringContainsString('/verify/', $client->lastPayload()['u']);
+    }
+
+    public function test_server_to_server_events_keep_the_real_path_outside_sdk_mode(): void
+    {
+        $client = new CapturingClient();
+        $takt = TaktClientFactory::fromSettings(Settings::sanitize([
+            'api_endpoint' => 'https://takt.example.com',
+            'domain' => 'shop.example.com',
+            'api_key' => 'secret',
+            'mode' => 'cdn',
+            'redact_routes' => '/verify/{token}',
+        ]), $client);
+
+        $this->assertInstanceOf(Takt::class, $takt);
+        $takt->event('Purchase', [], null, 'https://shop.example.com/verify/abc123secret');
+
+        $this->assertStringContainsString('abc123secret', $client->lastPayload()['u']);
+    }
 }

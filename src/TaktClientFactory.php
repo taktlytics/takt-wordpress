@@ -32,13 +32,18 @@ final class TaktClientFactory
 
         $factory = new Psr17Factory();
 
-        return new Takt(
-            $endpoint,
-            (string) ($settings['domain'] ?? ''),
-            $apiKey,
-            $client ?? new WpRemotePostClient(),
-            $factory,
-            $factory,
-        );
+        try {
+            return new Takt(
+                $endpoint,
+                (string) ($settings['domain'] ?? ''),
+                $apiKey,
+                $client ?? new WpRemotePostClient(),
+                $factory,
+                $factory,
+                redactRoutes: Settings::redactRoutes($settings),
+            );
+        } catch (\InvalidArgumentException) {
+            return null;
+        }
     }
 }

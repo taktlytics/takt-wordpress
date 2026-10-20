@@ -4,7 +4,7 @@ Tags: analytics, privacy, woocommerce, statistics, tracking
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 8.1
-Stable tag: 0.4.0
+Stable tag: 0.5.0
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
@@ -55,6 +55,16 @@ In the WordPress options table, or in a wp-config.php constant (TAKT_API_KEY) wh
 
 == Changelog ==
 
+= 0.5.0 =
+* The bundled takt-core-php moves to 0.7.1, which loads takt-core 0.12.1. The ingest origin and the script origin must now use https, localhost included: plain http values are ignored, an admin notice names the setting, and the TAKT_PLAINTEXT_HOSTS constant no longer has any effect.
+* New setting Redacted routes (SDK mode): route patterns such as /verify/{token} are sent as their pattern instead of the real path. Constraints such as {code<\d{1,3}>} are supported. A value that breaks its constraint is not masked (/reset/1234 with {code<\d{1,3}>} is sent in clear), and the pattern /* rewrites every page: do not use it.
+* New setting Route templates (SDK mode): sends every page under a template, never under its real path. The template comes from the takt_route_template filter, or defaults to / on the front page, /{post_type}/{slug} on a single post or page, and /[redacted] elsewhere. The filter value is not validated: it is the integrator's responsibility. Downloads stay tracked: the destination is sent as the followed origin plus /[redacted], and only its extension remains in clear. The referrer is always reduced to its origin with a trailing / (for example https://example.com/). Outbound links to the same host are masked; links to another host only go through Redacted routes. A page URL that cannot be read reliably (backslash, control character, surrounding spaces, user information, non-DNS host) goes out as the followed origin plus /[redacted]; on WooCommerce, the URL falls back to https://<domain>/.
+* An admin notice warns when Redacted routes or Route templates are set outside SDK mode: those settings are ignored there and raw paths are sent.
+* A plain http script origin suspends the tracking (no snippet at all) until it is replaced by a valid https origin, instead of falling back to the default collect URL.
+* The redacted routes also apply to the server-to-server purchase events, in SDK mode.
+* The admin screen and its messages are translatable (text domain takt-analytics, French source).
+* With an http origin, the server-to-server client is no longer built, so a misconfigured origin cannot break page loads.
+
 = 0.4.0 =
 * The Script origin and Ingest origin settings accept https only (plain http stays allowed for localhost, 127.0.0.1 and [::1], or for hosts listed in the TAKT_PLAINTEXT_HOSTS constant). A stored ingest origin that is no longer accepted is ignored and an admin notice says so.
 * The admin screen warns when the API key is stored in the database rather than in the TAKT_API_KEY constant.
@@ -85,6 +95,9 @@ In the WordPress options table, or in a wp-config.php constant (TAKT_API_KEY) wh
 * Initial release: snippet injection and WooCommerce server-to-server purchase events.
 
 == Upgrade Notice ==
+
+= 0.5.0 =
+The ingest and script origins must use https, localhost included. A plain http origin is now ignored: switch it to https. A refused script origin suspends the tracking until it is fixed, and a refused ingest origin stops WooCommerce purchases from arriving.
 
 = 0.4.0 =
 The ingest and script origins must use https. If WooCommerce purchases stop arriving, check Settings → Takt Analytics for a plain http origin.

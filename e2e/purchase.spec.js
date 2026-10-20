@@ -2,17 +2,17 @@ const { test, expect } = require('@playwright/test');
 const { execSync } = require('node:child_process');
 
 const mockPort = process.env.MOCK_INGEST_PORT || 9911;
-const mock = `http://localhost:${mockPort}`;
+const mock = `https://localhost:${mockPort}`;
 const cli = process.env.TAKT_WP_CLI || 'npx wp-env run cli';
 const triggerPath = 'wp-content/plugins/takt-wordpress/e2e/trigger-order.php';
 
-async function events() {
-  const res = await fetch(`${mock}/__events`);
+async function events(request) {
+  const res = await request.get(`${mock}/__events`);
   return res.json();
 }
 
-test('a completed WooCommerce order sends a Purchase event with revenue', async () => {
-  await fetch(`${mock}/__reset`, { method: 'POST' });
+test('a completed WooCommerce order sends a Purchase event with revenue', async ({ request }) => {
+  await request.post(`${mock}/__reset`);
 
   const out = execSync(`${cli} wp eval-file ${triggerPath}`, { encoding: 'utf8' });
   expect(out).toMatch(/ORDER_ID=\d+/);
@@ -21,7 +21,7 @@ test('a completed WooCommerce order sends a Purchase event with revenue', async 
   await expect
     .poll(
       async () => {
-        purchase = (await events()).find((e) => e.n === 'Purchase');
+        purchase = (await events(request)).find((e) => e.n === 'Purchase');
         return Boolean(purchase);
       },
       { timeout: 20000, intervals: [500] },

@@ -73,6 +73,8 @@ mkdir -p "$STAGE/$SLUG"
 cp -R "$BUILD/." "$STAGE/$SLUG/"
 rm -rf "$STAGE/$SLUG/tests" "$STAGE/$SLUG"/.php-cs-fixer* "$STAGE/$SLUG"/phpstan.neon \
        "$STAGE/$SLUG"/phpunit.xml* "$STAGE/$SLUG"/scoper.inc.php "$STAGE/$SLUG"/composer.* 2>/dev/null || true
+rm -rf "$STAGE/$SLUG/vendor/vskstudio/takt-core-php/bin"
+find "$STAGE/$SLUG/vendor" -type f -name composer.lock -delete
 ( cd "$STAGE" && zip -rqX "$DIST/$SLUG.zip" "$SLUG" )
 rm -rf "$STAGE"
 

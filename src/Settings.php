@@ -11,7 +11,9 @@ final class Settings
     /** Chemin de collecte que core-php ajoute lui-même à l'origine d'ingestion. */
     private const INGEST_PATH = '/api/event';
 
-    private const LOOPBACK_HOSTS = ['localhost', '127.0.0.1', '[::1]'];
+    private const MAX_ROUTE_LENGTH = 200;
+
+    private const URL_KEYS = ['api_endpoint', 'script_origin'];
 
     /**
      * @param array<string,mixed> $raw
@@ -22,7 +24,7 @@ final class Settings
         $domain = is_string($raw['domain'] ?? null) ? trim($raw['domain']) : '';
         $mode = in_array($raw['mode'] ?? null, ['cdn', 'asset', 'sdk'], true) ? $raw['mode'] : 'inline';
 
-        return [
+        $clean = [
             'domain' => self::isValidHostname($domain) ? $domain : '',
             'mode' => $mode,
             'outbound' => !empty($raw['outbound']),
@@ -39,6 +41,8 @@ final class Settings
             'track_query' => !empty($raw['track_query']),
             'query_params' => self::parseParams($raw['query_params'] ?? ''),
             'exclude' => self::parsePaths($raw['exclude'] ?? ''),
+            'redact_routes' => self::parseRoutes($raw['redact_routes'] ?? ''),
+            'route_templates' => !empty($raw['route_templates']),
             'ignore_dnt' => !empty($raw['ignore_dnt']),
             'disable_tracking' => !empty($raw['disable_tracking']),
             'woocommerce' => !empty($raw['woocommerce']),
@@ -48,6 +52,34 @@ final class Settings
             'api_key' => is_string($raw['api_key'] ?? null) ? trim($raw['api_key']) : '',
             'api_endpoint' => self::sanitizeIngestOrigin($raw['api_endpoint'] ?? ''),
         ];
+        $clean['refused_urls'] = self::refusedUrlsFor($raw, $clean);
+
+        return $clean;
+    }
+
+    /**
+     * @param array<string,mixed> $settings
+     * @return list<string>
+     */
+    public static function refusedUrls(array $settings): array
+    {
+        $keys = is_array($settings['refused_urls'] ?? null) ? $settings['refused_urls'] : [];
+
+        return array_values(array_filter(
+            $keys,
+            static fn (mixed $key): bool => is_string($key) && in_array($key, self::URL_KEYS, true),
+        ));
+    }
+
+    /**
+     * @param array<string,mixed> $s
+     * @return list<string>
+     */
+    public static function redactRoutes(array $s): array
+    {
+        $routes = is_array($s['redact_routes'] ?? null) ? $s['redact_routes'] : [];
+
+        return ($s['mode'] ?? 'inline') === 'sdk' ? array_values($routes) : [];
     }
 
     /**
@@ -70,6 +102,8 @@ final class Settings
         // in sdk mode, core-php throws if it is set otherwise. Drop it outside
         // sdk (or when empty) so the admin can't fatal every page.
         $exclude = is_array($s['exclude'] ?? null) ? $s['exclude'] : [];
+        $redactRoutes = self::redactRoutes($s);
+        $routeTemplates = $mode === 'sdk' && !empty($s['route_templates']);
 
         $args = [
             'domain' => $s['domain'] ?? '',
@@ -88,10 +122,14 @@ final class Settings
             'respectDnt' => !empty($s['ignore_dnt']) ? false : null,
             'enabled' => !empty($s['disable_tracking']) ? false : null,
             'scrubUrl' => $scrubUrl,
+            'routeTemplates' => $routeTemplates,
         ];
 
         if ($mode === 'sdk' && $exclude !== []) {
             $args['exclude'] = $exclude;
+        }
+        if ($redactRoutes !== []) {
+            $args['redactRoutes'] = $redactRoutes;
         }
 
         return Options::fromArray($args);
@@ -150,6 +188,40 @@ final class Settings
     }
 
     /**
+     * @param array<string,mixed> $raw
+     * @param array<string,mixed> $clean
+     * @return list<string>
+     */
+    private static function refusedUrlsFor(array $raw, array $clean): array
+    {
+        $persisted = self::refusedUrls($raw);
+        $refused = [];
+        foreach (self::URL_KEYS as $key) {
+            $submitted = is_string($raw[$key] ?? null) ? trim($raw[$key]) : '';
+            $wasRefused = $submitted !== '' || in_array($key, $persisted, true);
+            if ($wasRefused && $clean[$key] === '') {
+                $refused[] = $key;
+            }
+        }
+
+        return $refused;
+    }
+
+    /** @return list<string> */
+    private static function parseRoutes(mixed $raw): array
+    {
+        $out = [];
+        foreach (preg_split('#,(?![^{}<>]*[}>])#', self::toCsv($raw)) ?: [] as $part) {
+            $route = trim($part);
+            if ($route !== '' && strlen($route) <= self::MAX_ROUTE_LENGTH && preg_match('#^/[A-Za-z0-9_\-./:*+?{}\[\]()<>|\\\\,=]*\z#', $route)) {
+                $out[] = $route;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
      * L'origine d'ingestion serveur-à-serveur : core-php lui ajoute
      * « /api/event » à chaque envoi. Le réglage accepte donc les deux formes :
      * l'origine (https://taktlytics.com) et l'URL de collecte complète
@@ -177,26 +249,14 @@ final class Settings
         return is_string($raw) ? $raw : '';
     }
 
-    /** @return list<string> */
-    private static function plaintextHosts(): array
-    {
-        $extra = \defined('TAKT_PLAINTEXT_HOSTS') ? \constant('TAKT_PLAINTEXT_HOSTS') : '';
-        $hosts = array_map(static fn (string $host): string => strtolower(trim($host)), explode(',', self::toCsv($extra)));
-        $hosts = array_filter($hosts, static fn (string $host): bool => $host !== '');
-
-        return array_values(array_unique([...self::LOOPBACK_HOSTS, ...$hosts]));
-    }
-
     private static function sanitizeUrl(mixed $raw): string
     {
         if (!is_string($raw) || ($url = trim($raw)) === '') {
             return '';
         }
         $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
-        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
-        $isSecure = $scheme === 'https';
-        $isLocalPlaintext = $scheme === 'http' && in_array($host, self::plaintextHosts(), true);
-        if ($host === '' || !($isSecure || $isLocalPlaintext)) {
+        $host = (string) parse_url($url, PHP_URL_HOST);
+        if ($scheme !== 'https' || $host === '') {
             return '';
         }
 

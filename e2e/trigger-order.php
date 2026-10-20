@@ -8,6 +8,8 @@ if (!function_exists('wc_create_order')) {
     exit(1);
 }
 
+add_filter('http_request_args', static fn (array $args): array => array_merge($args, ['sslverify' => false]));
+
 $product = new WC_Product_Simple();
 $product->set_name('E2E Widget');
 $product->set_regular_price('49.95');

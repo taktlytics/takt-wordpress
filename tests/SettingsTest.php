@@ -51,6 +51,26 @@ final class SettingsTest extends TestCase
         $this->assertSame([], Settings::sanitize([])['query_params']);
     }
 
+    public function test_sanitize_parses_redact_routes_keeping_constraint_commas(): void
+    {
+        $out = Settings::sanitize([
+            'redact_routes' => '/verify/{token}, /reset/{code<\\d{1,3}>}, not-a-route, /bad space, <script>, /ok',
+        ]);
+
+        $this->assertSame(['/verify/{token}', '/reset/{code<\\d{1,3}>}', '/ok'], $out['redact_routes']);
+        $this->assertSame([], Settings::sanitize([])['redact_routes']);
+        $this->assertSame($out['redact_routes'], Settings::sanitize($out)['redact_routes']);
+    }
+
+    public function test_to_options_passes_redact_routes_only_in_sdk_mode(): void
+    {
+        $sdk = Settings::toOptions(['domain' => 'example.com', 'mode' => 'sdk', 'redact_routes' => ['/verify/{token}']]);
+        $cdn = Settings::toOptions(['domain' => 'example.com', 'mode' => 'cdn', 'redact_routes' => ['/verify/{token}']]);
+
+        $this->assertSame(['/verify/{token}'], $sdk->redactRoutes);
+        $this->assertSame([], $cdn->redactRoutes);
+    }
+
     public function test_sanitize_parses_exclude_paths(): void
     {
         $out = Settings::sanitize(['exclude' => '/app, /account/settings , not-a-path,bad path,/a_b-c/,,']);
@@ -161,7 +181,7 @@ final class SettingsTest extends TestCase
         $this->assertSame('', $bad['script_origin']);
     }
 
-    public function test_sanitize_rejects_plain_http_urls_outside_loopback(): void
+    public function test_sanitize_rejects_plain_http_urls_even_on_loopback(): void
     {
         $out = Settings::sanitize([
             'api_endpoint' => 'http://takt.example.com',
@@ -170,40 +190,17 @@ final class SettingsTest extends TestCase
 
         $this->assertSame('', $out['api_endpoint']);
         $this->assertSame('', $out['script_origin']);
-        $this->assertSame('', Settings::sanitize(['script_origin' => 'http://localhost.example.com'])['script_origin']);
-        $this->assertSame('', Settings::sanitize(['api_endpoint' => 'http://host.docker.internal:9911'])['api_endpoint']);
-    }
-
-    public function test_sanitize_accepts_plain_http_on_loopback_hosts(): void
-    {
-        $this->assertSame(
-            'http://localhost:9911',
-            Settings::sanitize(['api_endpoint' => 'http://localhost:9911/'])['api_endpoint'],
-        );
-        $this->assertSame(
-            'http://127.0.0.1:8080',
-            Settings::sanitize(['script_origin' => 'http://127.0.0.1:8080'])['script_origin'],
-        );
-        $this->assertSame(
-            'http://[::1]:8080',
-            Settings::sanitize(['api_endpoint' => 'http://[::1]:8080'])['api_endpoint'],
-        );
+        $this->assertSame('', Settings::sanitize(['api_endpoint' => 'http://localhost:9911'])['api_endpoint']);
+        $this->assertSame('', Settings::sanitize(['script_origin' => 'http://127.0.0.1:8080'])['script_origin']);
+        $this->assertSame('', Settings::sanitize(['api_endpoint' => 'http://[::1]:8080'])['api_endpoint']);
     }
 
     #[RunInSeparateProcess]
-    public function test_sanitize_accepts_plain_http_on_hosts_listed_in_the_constant(): void
+    public function test_sanitize_ignores_the_former_plaintext_hosts_constant(): void
     {
-        define('TAKT_PLAINTEXT_HOSTS', ' host.docker.internal, takt.internal.test ,');
+        define('TAKT_PLAINTEXT_HOSTS', 'host.docker.internal');
 
-        $this->assertSame(
-            'http://host.docker.internal:9911',
-            Settings::sanitize(['api_endpoint' => 'http://host.docker.internal:9911'])['api_endpoint'],
-        );
-        $this->assertSame(
-            'http://takt.internal.test',
-            Settings::sanitize(['script_origin' => 'http://takt.internal.test'])['script_origin'],
-        );
-        $this->assertSame('', Settings::sanitize(['api_endpoint' => 'http://other.example.com'])['api_endpoint']);
+        $this->assertSame('', Settings::sanitize(['api_endpoint' => 'http://host.docker.internal:9911'])['api_endpoint']);
     }
 
     public function test_sanitize_folds_a_full_collect_url_back_to_its_ingest_origin(): void
@@ -318,5 +315,72 @@ final class SettingsTest extends TestCase
         // Outside sdk mode the path list is dropped (core-php would otherwise throw).
         $cdn = Settings::toOptions(['domain' => 'example.com', 'mode' => 'cdn', 'exclude' => ['/app']]);
         $this->assertSame([], $cdn->exclude);
+    }
+
+    public function test_sanitize_reads_the_route_templates_checkbox(): void
+    {
+        $this->assertTrue(Settings::sanitize(['route_templates' => '1'])['route_templates']);
+        $this->assertFalse(Settings::sanitize([])['route_templates']);
+    }
+
+    public function test_to_options_passes_route_templates_only_in_sdk_mode(): void
+    {
+        $sdk = Settings::toOptions(Settings::sanitize(['domain' => 'example.com', 'mode' => 'sdk', 'route_templates' => '1']), null);
+        $cdn = Settings::toOptions(Settings::sanitize(['domain' => 'example.com', 'mode' => 'cdn', 'route_templates' => '1']), null);
+
+        $this->assertTrue($sdk->routeTemplates);
+        $this->assertFalse($cdn->routeTemplates);
+    }
+
+    public function test_redact_routes_are_only_handed_out_in_sdk_mode(): void
+    {
+        $this->assertSame(['/verify/{token}'], Settings::redactRoutes(Settings::sanitize(['mode' => 'sdk', 'redact_routes' => '/verify/{token}'])));
+        $this->assertSame([], Settings::redactRoutes(Settings::sanitize(['mode' => 'cdn', 'redact_routes' => '/verify/{token}'])));
+    }
+
+    public function test_a_plain_http_script_origin_is_recorded_as_refused(): void
+    {
+        $clean = Settings::sanitize(['domain' => 'example.com', 'script_origin' => 'http://cdn.example.com']);
+
+        $this->assertSame('', $clean['script_origin']);
+        $this->assertSame(['script_origin'], $clean['refused_urls']);
+    }
+
+    public function test_a_refused_script_origin_stays_refused_when_the_field_comes_back_blank(): void
+    {
+        $clean = Settings::sanitize(['domain' => 'example.com', 'script_origin' => '', 'refused_urls' => ['script_origin']]);
+
+        $this->assertSame(['script_origin'], $clean['refused_urls']);
+    }
+
+    public function test_a_blank_script_origin_that_was_never_refused_is_not_refused(): void
+    {
+        $this->assertSame([], Settings::sanitize(['domain' => 'example.com', 'script_origin' => ''])['refused_urls']);
+    }
+
+    public function test_an_https_script_origin_clears_the_refusal(): void
+    {
+        $clean = Settings::sanitize(['domain' => 'example.com', 'script_origin' => 'https://cdn.example.com', 'refused_urls' => ['script_origin']]);
+
+        $this->assertSame([], $clean['refused_urls']);
+        $this->assertSame('https://cdn.example.com', $clean['script_origin']);
+    }
+
+    public function test_download_tracking_follows_its_setting_in_template_mode(): void
+    {
+        $templated = Settings::toOptions(Settings::sanitize(['domain' => 'example.com', 'mode' => 'sdk', 'route_templates' => '1', 'files' => '1']), null);
+        $templatedOff = Settings::toOptions(Settings::sanitize(['domain' => 'example.com', 'mode' => 'sdk', 'route_templates' => '1']), null);
+
+        $this->assertTrue($templated->files);
+        $this->assertFalse($templatedOff->files);
+    }
+
+    public function test_sanitize_never_yields_a_non_https_ingest_origin(): void
+    {
+        foreach (['http://takt.example.com', 'HTTP://takt.example.com', 'ftp://takt.example.com', '//takt.example.com', 'javascript:alert(1)', 'https://takt.example.com/api/event'] as $raw) {
+            $endpoint = Settings::sanitize(['api_endpoint' => $raw])['api_endpoint'];
+
+            $this->assertTrue($endpoint === '' || str_starts_with($endpoint, 'https://'), $raw);
+        }
     }
 }

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "102f732655211f74186bde1a9fdf478a",
+    "content-hash": "29dcb6b39efffd2b79da0a888e163422",
     "packages": [
         {
             "name": "nyholm/psr7",
@@ -325,16 +325,16 @@
         },
         {
             "name": "vskstudio/takt-core-php",
-            "version": "v0.6.1",
+            "version": "v0.7.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/taktlytics/takt-core-php.git",
-                "reference": "d7f335756bfd6646aa4c563fa4d1015eb04238f0"
+                "reference": "cfc9ec4db0a2adaacbd673072b1ffccb156bd85c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/taktlytics/takt-core-php/zipball/d7f335756bfd6646aa4c563fa4d1015eb04238f0",
-                "reference": "d7f335756bfd6646aa4c563fa4d1015eb04238f0",
+                "url": "https://api.github.com/repos/taktlytics/takt-core-php/zipball/cfc9ec4db0a2adaacbd673072b1ffccb156bd85c",
+                "reference": "cfc9ec4db0a2adaacbd673072b1ffccb156bd85c",
                 "shasum": ""
             },
             "require": {
@@ -344,7 +344,7 @@
                 "psr/http-factory": "^1.0"
             },
             "require-dev": {
-                "friendsofphp/php-cs-fixer": "^3.59",
+                "friendsofphp/php-cs-fixer": "^3.95",
                 "nyholm/psr7": "^1.8",
                 "php-http/mock-client": "^1.6",
                 "phpstan/phpstan": "^1.11",
@@ -379,7 +379,7 @@
                 "issues": "https://github.com/taktlytics/takt-core-php/issues",
                 "source": "https://github.com/taktlytics/takt-core-php"
             },
-            "time": "2026-10-19T07:06:47+00:00"
+            "time": "2026-10-20T08:26:52+00:00"
         }
     ],
     "packages-dev": [

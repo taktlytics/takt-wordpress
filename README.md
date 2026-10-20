@@ -35,12 +35,12 @@ The release ZIP is self-contained: it bundles `takt-core-php` and its PSR-7 depe
 
 ## Configuration
 
-**Settings → Takt Analytics**: 19 settings, all stored in the single `takt_settings` option. Defaults below are what a fresh, never-saved install uses.
+**Settings → Takt Analytics**: 21 settings, all stored in the single `takt_settings` option. Defaults below are what a fresh, never-saved install uses.
 
 | Setting | Default | Description |
 | --- | --- | --- |
 | Domain | *(empty)* | The site identifier sent with every event (e.g. `example.com`). While empty, no snippet is injected at all. |
-| Mode | `inline` | `inline` (tracker embedded in the page, anti-adblock), `cdn` (jsDelivr), `asset` (served from your own origin) or `sdk` (ES module, required by *Excluded paths* and URL scrubbing). |
+| Mode | `inline` | `inline` (tracker embedded in the page, anti-adblock), `cdn` (jsDelivr), `asset` (served from your own origin) or `sdk` (ES module, required by *Excluded paths*, *Redacted routes* and URL scrubbing). |
 | Script origin | *(empty)* | Base URL the tracker is served from in `cdn`/`asset` mode. |
 | Exclude localhost | off | Skip tracking on local hostnames (`localhost`, `*.local`, private ranges). **Off by default**: turn it on if your production domain is also used locally. |
 | Outbound clicks | off | Autocapture: sends `Outbound Link: Click` for links to another hostname. |
@@ -52,6 +52,8 @@ The release ZIP is self-contained: it bundles `takt-core-php` and its PSR-7 depe
 | Keep query string | off | Keep the raw query string + hash in tracked URLs. Off strips them. |
 | Kept query params | *(empty)* | Allowlist of params kept when *Keep query string* is off (e.g. `utm_source, utm_medium`). |
 | Excluded paths | *(empty)* | Path prefixes never tracked (e.g. `/app, /account`). SDK mode only. Silently dropped in the other modes. |
+| Redacted routes | *(empty)* | Route patterns whose matches are sent as the pattern instead of the real path (e.g. `/verify/{token}, /reset/{code}`). A segment constraint such as `{code<\d{1,3}>}` is supported. SDK mode only: ignored in the other modes, with an admin notice. Also applied to server-to-server purchase events. **Fail-open:** a value that breaks its constraint is not masked: `/reset/1234` with `{code<\d{1,3}>}` is sent in clear. **Do not use `/*`:** it matches every page and rewrites all of them. |
+| Route templates | off | SDK mode only. Sends every page under its template, never under its real path. The template comes from the `takt_route_template` filter (not validated: the integrator is responsible for it); without one: `/` on the front page, `/{post_type}/{slug}` on a single post or page, and `/[redacted]` everywhere else (archives, search, 404). Downloads stay tracked: the destination is sent as the followed origin plus `/[redacted]`, and only its extension remains in clear. The referrer is always reduced to its origin with a trailing `/` (for example `https://example.com/`). Outbound links to the same host are masked; links to another host only go through Redacted routes. A page URL that cannot be read reliably (backslash, control character, surrounding spaces, user information, non-DNS host) goes out as the followed origin plus `/[redacted]`; on WooCommerce, the URL falls back to `https://<domain>/`. |
 | Ignore Do-Not-Track | off | Stop honoring the browser Do-Not-Track header (honored by default). |
 | Pause tracking | off | Kill-switch: disable tracking entirely without removing the plugin. |
 | WooCommerce | off | Send purchase events with revenue. Also needs the ingest origin and the API key. |
@@ -84,13 +86,14 @@ define('TAKT_API_KEY', 'your-key');
 define('TAKT_SCRUB_URL', '(u) => u.split("#")[0]');
 ```
 
-### Plain `http` endpoints
+### HTTPS only
 
-The ingest origin and the script origin must use `https`. Plain `http` is accepted for `localhost`, `127.0.0.1` and `[::1]` only. For a development setup that reaches Takt over another host, list the extra hosts in a constant (comma-separated, empty by default):
+The ingest origin and the script origin must use `https`, `localhost` included. `takt-core-php` 0.7 refuses any other endpoint, so a plain `http` value is ignored on save and on read: the field comes back empty and an admin notice names the setting. Two consequences differ by setting:
 
-```php
-define('TAKT_PLAINTEXT_HOSTS', 'takt.test, dev.example.test');
-```
+- **Script origin:** the tracking is suspended until it is fixed. The snippet is not rendered at all, so no page is tracked and no request falls back to `taktlytics.com`. Saving the field blank does not lift the suspension: only a valid `https` origin does.
+- **Ingest origin:** WooCommerce purchases are not sent until the ingest origin is fixed. Browser tracking is not affected.
+
+On a local development site, serve Takt over a local https setup (a self-signed certificate trusted by your system works) or point the ingest origin at an https tunnel.
 
 ### Privacy
 
