@@ -32,6 +32,13 @@ try {
 }
 
 const server = https.createServer({ key, cert }, (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204).end();
+    return;
+  }
   if (req.method === 'POST' && req.url.startsWith('/api/event')) {
     let body = '';
     req.on('data', (chunk) => {
