@@ -58,7 +58,13 @@ jobs:
         run: npx wp-env run cli wp eval-file wp-content/plugins/takt-wordpress/e2e/setup-wp.php
 
       - name: Run end-to-end tests
-        run: npx playwright test
+        run: npx playwright test --grep-invert @route-templates
+
+      - name: Configure route templates
+        run: npx wp-env run cli wp eval-file wp-content/plugins/takt-wordpress/e2e/setup-route-templates.php
+
+      - name: Run route template end-to-end tests
+        run: npx playwright test --grep @route-templates
 
       - name: Upload report on failure
         if: failure()

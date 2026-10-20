@@ -9,6 +9,7 @@ use Brain\Monkey\Functions;
 use PHPUnit\Framework\TestCase;
 use Vskstudio\Takt\WordPress\AdminPage;
 use Vskstudio\Takt\WordPress\Plugin;
+use Vskstudio\Takt\WordPress\Settings;
 
 final class AdminPageTest extends TestCase
 {
@@ -161,5 +162,27 @@ final class AdminPageTest extends TestCase
         ob_start();
         (new AdminPage())->renderRefusedUrlNotice();
         $this->assertSame('', (string) ob_get_clean());
+    }
+
+    public function test_out_of_sdk_notice_warns_when_routes_are_set_outside_sdk_mode(): void
+    {
+        Functions\stubEscapeFunctions();
+        Functions\stubTranslationFunctions();
+
+        $fromTemplates = AdminPage::outOfSdkNotice(Settings::sanitize(['mode' => 'cdn', 'route_templates' => '1']));
+        $fromRedaction = AdminPage::outOfSdkNotice(Settings::sanitize(['mode' => 'inline', 'redact_routes' => '/verify/{token}']));
+
+        $this->assertStringContainsString('notice-error', $fromTemplates);
+        $this->assertStringContainsString('Ces réglages sont ignorés hors mode SDK', $fromTemplates);
+        $this->assertStringContainsString('notice-error', $fromRedaction);
+    }
+
+    public function test_out_of_sdk_notice_is_silent_in_sdk_mode_or_without_routes(): void
+    {
+        Functions\stubEscapeFunctions();
+        Functions\stubTranslationFunctions();
+
+        $this->assertSame('', AdminPage::outOfSdkNotice(Settings::sanitize(['mode' => 'sdk', 'route_templates' => '1', 'redact_routes' => '/verify/{token}'])));
+        $this->assertSame('', AdminPage::outOfSdkNotice(Settings::sanitize(['mode' => 'cdn'])));
     }
 }

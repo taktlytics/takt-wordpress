@@ -1,5 +1,3 @@
-// Minimal Takt ingest stand-in for E2E: records POST /api/event payloads and
-// exposes them over GET /__events so specs can assert what the plugin sent.
 const https = require('node:https');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -71,6 +69,5 @@ const server = https.createServer({ key, cert }, (req, res) => {
 });
 
 server.listen(port, () => {
-  // eslint-disable-next-line no-console
   console.log(`mock ingest on :${port}`);
 });

@@ -113,6 +113,7 @@ final class AdminPage
         $hasKey = $keyLocked || ($s['api_key'] ?? '') !== '';
 
         echo '<div class="wrap"><h1>Takt Analytics</h1>'
+            . self::outOfSdkNotice($s)
             . self::keyStorageNotice($keyLocked, (string) $s['api_key'])
             . '<form method="post" action="options.php">';
         \settings_fields(self::GROUP);
@@ -129,7 +130,12 @@ final class AdminPage
         $this->checkboxRow('exclude_localhost', \__('Exclure localhost', self::TEXT_DOMAIN), $s['exclude_localhost']);
 
         $this->checkboxRow('outbound', \__('Clics sortants', self::TEXT_DOMAIN), $s['outbound']);
-        $this->checkboxRow('files', \__('Téléchargements', self::TEXT_DOMAIN), $s['files']);
+        $this->checkboxRow(
+            'files',
+            \__('Téléchargements', self::TEXT_DOMAIN),
+            $s['files'],
+            $s['mode'] === 'sdk' && $s['route_templates'] ? \__('Le suivi des téléchargements est désactivé en mode gabarit.', self::TEXT_DOMAIN) : '',
+        );
         $this->checkboxRow('tagged', \__('Événements balisés (HTML)', self::TEXT_DOMAIN), $s['tagged']);
         $this->checkboxRow('not_found', \__('Pages 404', self::TEXT_DOMAIN), $s['not_found']);
         $this->textRow('file_extensions', \__('Extensions téléchargeables', self::TEXT_DOMAIN), implode(', ', $s['file_extensions']), 'pdf, zip, docx');
@@ -150,7 +156,7 @@ final class AdminPage
             'route_templates',
             \__('Toutes les pages sous leur gabarit (mode SDK)', self::TEXT_DOMAIN),
             $s['route_templates'],
-            \__('Aucun chemin brut n\'est envoyé : chaque page part sous le gabarit du filtre takt_route_template, sinon / pour l\'accueil, /{post_type}/{slug} pour les contenus uniques et /[redacted] pour le reste (archives, recherche, 404).', self::TEXT_DOMAIN),
+            \__('Les pages sont envoyées sous leur gabarit, jamais sous leur chemin réel. Gabarit : le filtre takt_route_template, sinon / pour l\'accueil, /{post_type}/{slug} pour les contenus uniques et /[redacted] pour le reste (archives, recherche, 404). Le suivi des téléchargements est désactivé dans ce mode.', self::TEXT_DOMAIN),
         );
         $this->checkboxRow('ignore_dnt', \__('Ignorer Do-Not-Track', self::TEXT_DOMAIN), $s['ignore_dnt']);
         $this->checkboxRow('disable_tracking', \__('Suspendre le suivi', self::TEXT_DOMAIN), $s['disable_tracking']);
@@ -179,7 +185,22 @@ final class AdminPage
     {
         return $key === 'api_endpoint'
             ? \__("Origine d'ingestion : l'URL n'est pas acceptée (https requis). L'envoi des achats WooCommerce est interrompu tant qu'elle n'est pas corrigée.", self::TEXT_DOMAIN)
-            : \__("Origine du script : l'URL n'est pas acceptée (https requis). Le suivi est suspendu tant qu'elle n'est pas corrigée.", self::TEXT_DOMAIN);
+            : \__("Origine du script : l'URL n'est pas acceptée (https requis). Le suivi est suspendu tant qu'elle n'est pas corrigée. Saisissez une origine https valide pour reprendre le suivi (une valeur vide ne suffit pas).", self::TEXT_DOMAIN);
+    }
+
+    /**
+     * @param array<string,mixed> $s
+     */
+    public static function outOfSdkNotice(array $s): string
+    {
+        $routesSet = !empty($s['route_templates']) || $s['redact_routes'] !== [];
+        if ($s['mode'] === 'sdk' || !$routesSet) {
+            return '';
+        }
+
+        return '<div class="notice notice-error"><p>'
+            . \esc_html(\__('Ces réglages sont ignorés hors mode SDK : les chemins bruts sont envoyés.', self::TEXT_DOMAIN))
+            . '</p></div>';
     }
 
     /**
