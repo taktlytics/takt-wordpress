@@ -1,5 +1,12 @@
 # Takt Analytics for WordPress
 
+## 0.5.1
+
+- The bundled `vskstudio/takt-core-php` moves to 0.7.2, which loads
+  `@vskstudio/takt-core` 0.12.2. Its default download extensions now include
+  `doc` and `ppt`: when the Extensions setting is left empty, downloads of
+  `.doc` and `.ppt` files are tracked too.
+
 ## 0.5.0
 
 - The bundled `vskstudio/takt-core-php` moves to 0.7.1, which loads
