@@ -18,7 +18,7 @@ Takt Analytics connects your WordPress site to Takt, privacy-first web analytics
 * Autocapture for outbound links, file downloads, tagged events (elements carrying data-takt-event) and 404s.
 * Advanced controls: sampling rate, query-string handling with a param allowlist, Do-Not-Track override and a tracking kill-switch.
 * Sends WooCommerce orders as server-to-server purchase events with revenue, so sales are tracked even when an order completes off-session (payment callback, admin, cron).
-* Uses WordPress' own HTTP API for server-to-server requests — no bundled HTTP libraries.
+* Uses WordPress' own HTTP API for server-to-server requests, no bundled HTTP libraries.
 * All dependencies are namespace-isolated, so the plugin never conflicts with other plugins.
 
 A Takt account is required. The browser snippet only needs your site domain; purchase tracking also needs the ingest origin and an API key.
@@ -47,7 +47,7 @@ Purchase events are sent from your server to the configured Takt ingest origin a
 
 = What goes in the "Ingest origin" field? =
 
-The origin of the Takt service — https://taktlytics.com — without a path: the plugin appends /api/event itself. If you paste the full collect URL (https://taktlytics.com/api/event), it is folded back to its origin when saved, so both forms work.
+The origin of the Takt service (https://taktlytics.com), without a path: the plugin appends /api/event itself. If you paste the full collect URL (https://taktlytics.com/api/event), it is folded back to its origin when saved, so both forms work.
 
 = Where is my API key stored? =
 

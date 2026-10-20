@@ -46,8 +46,8 @@
 
 ## 0.3.2
 
-- **Ingest origin**: the server-to-server setting is an *origin* — `takt-core-php`
-  appends `/api/event` on every send — but nothing stopped an admin from pasting
+- **Ingest origin**: the server-to-server setting is an *origin*: `takt-core-php`
+  appends `/api/event` on every send, but nothing stopped an admin from pasting
   the full collect URL, which is the form documented everywhere on the snippet
   side (`https://taktlytics.com/api/event`). The request then went to
   `/api/event/api/event` and failed silently; since the order is claimed before
@@ -60,7 +60,7 @@
   defaults (**Exclure localhost** is off on a fresh install, not on), names the
   actual tagged-events selector (`[data-takt-event]`, with `data-takt-prop-*`
   properties), separates the ingest origin from the snippet's collect URL, and
-  no longer suggests Takt can be self-hosted — it is a managed service hosted in
+  no longer suggests Takt can be self-hosted. It is a managed service hosted in
   Europe, and only the measurement script can be served from your own domain.
   `readme.txt` also regains the changelog entries it was missing since 0.1.0.
 
@@ -74,7 +74,7 @@
 - New **Excluded paths** setting: a comma-separated list of path prefixes
   (e.g. `/app, /account`) that the browser tracker never records. This is a
   privacy control backed by the tracker's `exclude` option and is therefore
-  **SDK-mode only** — it is silently dropped in the inline / CDN / asset modes,
+  **SDK-mode only**. It is silently dropped in the inline / CDN / asset modes,
   where `takt-core-php` would otherwise throw.
 - Require `vskstudio/takt-core-php` `^0.5.0`, which adds the `exclude` option.
 

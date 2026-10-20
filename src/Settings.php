@@ -34,7 +34,7 @@ final class Settings
             'script_origin' => self::sanitizeUrl($raw['script_origin'] ?? ''),
             // Advanced options. respect_dnt/enabled default ON in the tracker, so
             // they are surfaced as opt-out flags (ignore_dnt / disable_tracking)
-            // — a fresh, never-saved install keeps tracking on and DNT honored.
+            // A fresh, never-saved install keeps tracking on and DNT honored.
             'sample_rate' => self::sanitizeRate($raw['sample_rate'] ?? ''),
             'track_query' => !empty($raw['track_query']),
             'query_params' => self::parseParams($raw['query_params'] ?? ''),
@@ -67,7 +67,7 @@ final class Settings
         $scrubRaw = is_string($s['scrub_url'] ?? null) ? trim($s['scrub_url']) : '';
         $scrubUrl = ($mode === 'sdk' && $scrubRaw !== '') ? $scrubRaw : null;
         // exclude is a path-prefix allowlist that, like scrubUrl, is only valid
-        // in sdk mode — core-php throws if it is set otherwise. Drop it outside
+        // in sdk mode, core-php throws if it is set otherwise. Drop it outside
         // sdk (or when empty) so the admin can't fatal every page.
         $exclude = is_array($s['exclude'] ?? null) ? $s['exclude'] : [];
 
@@ -97,7 +97,7 @@ final class Settings
         return Options::fromArray($args);
     }
 
-    /** A sampling rate in (0, 1] — else null (track everything). */
+    /** A sampling rate in (0, 1], else null (track everything). */
     private static function sanitizeRate(mixed $raw): ?float
     {
         if (!is_scalar($raw) || ($s = trim((string) $raw)) === '' || !is_numeric($s)) {
@@ -111,7 +111,7 @@ final class Settings
     /**
      * "utm_source, utm_medium ,bad token" → ["utm_source", "utm_medium"]: a
      * comma-separated allowlist of query-param names. Only [A-Za-z0-9_-] tokens
-     * survive — the rest would not be valid param names anyway.
+     * survive. The rest would not be valid param names anyway.
      *
      * @return list<string>
      */
@@ -130,7 +130,7 @@ final class Settings
 
     /**
      * "/app, /account , foo,," → ["/app", "/account"]: a comma-separated list of
-     * path prefixes never tracked. Only path-shaped entries survive — each must
+     * path prefixes never tracked. Only path-shaped entries survive. Each must
      * start with "/" and contain only [A-Za-z0-9_-] and slashes (no markup,
      * spaces or query strings). Consumed as the sdk-only `exclude` option.
      *
@@ -151,7 +151,7 @@ final class Settings
 
     /**
      * L'origine d'ingestion serveur-à-serveur : core-php lui ajoute
-     * « /api/event » à chaque envoi. Le réglage accepte donc les deux formes —
+     * « /api/event » à chaque envoi. Le réglage accepte donc les deux formes :
      * l'origine (https://taktlytics.com) et l'URL de collecte complète
      * (https://taktlytics.com/api/event, la forme documentée côté snippet), qui
      * est repliée sur son origine. Sans ce repli, l'envoi partait vers
@@ -226,7 +226,7 @@ final class Settings
     /**
      * A hostname like "example.com" or "shop.example.co.uk": dot-separated
      * labels of letters, digits and hyphens (not leading/trailing), ≤253 chars.
-     * Anything else (markup, spaces, schemes) is rejected — the snippet is
+     * Anything else (markup, spaces, schemes) is rejected. The snippet is
      * injected into every page's <head>, so the domain must never carry markup.
      */
     private static function isValidHostname(string $value): bool
