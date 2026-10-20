@@ -35,7 +35,7 @@ The release ZIP is self-contained: it bundles `takt-core-php` and its PSR-7 depe
 
 ## Configuration
 
-**Settings → Takt Analytics**: 20 settings, all stored in the single `takt_settings` option. Defaults below are what a fresh, never-saved install uses.
+**Settings → Takt Analytics**: 21 settings, all stored in the single `takt_settings` option. Defaults below are what a fresh, never-saved install uses.
 
 | Setting | Default | Description |
 | --- | --- | --- |
@@ -52,7 +52,8 @@ The release ZIP is self-contained: it bundles `takt-core-php` and its PSR-7 depe
 | Keep query string | off | Keep the raw query string + hash in tracked URLs. Off strips them. |
 | Kept query params | *(empty)* | Allowlist of params kept when *Keep query string* is off (e.g. `utm_source, utm_medium`). |
 | Excluded paths | *(empty)* | Path prefixes never tracked (e.g. `/app, /account`). SDK mode only. Silently dropped in the other modes. |
-| Redacted routes | *(empty)* | Route patterns whose matches are sent as the pattern instead of the real path (e.g. `/verify/{token}, /reset/{code}`). A segment constraint such as `{code<\d{1,3}>}` is supported. SDK mode only. Silently dropped in the other modes. |
+| Redacted routes | *(empty)* | Route patterns whose matches are sent as the pattern instead of the real path (e.g. `/verify/{token}, /reset/{code}`). A segment constraint such as `{code<\d{1,3}>}` is supported. SDK mode only. Silently dropped in the other modes. Also applied to server-to-server purchase events. **Fail-open:** a value that breaks its constraint is not masked: `/reset/1234` with `{code<\d{1,3}>}` is sent in clear. **Do not use `/*`:** it matches every page and rewrites all of them. |
+| Route templates | off | SDK mode only. Sends every page under its template instead of its real path, so no raw path leaves the site. The template comes from the `takt_route_template` filter; without one: `/` on the front page, `/{post_type}/{slug}` on a single post or page, and `/[redacted]` everywhere else (archives, search, 404). |
 | Ignore Do-Not-Track | off | Stop honoring the browser Do-Not-Track header (honored by default). |
 | Pause tracking | off | Kill-switch: disable tracking entirely without removing the plugin. |
 | WooCommerce | off | Send purchase events with revenue. Also needs the ingest origin and the API key. |
@@ -87,7 +88,12 @@ define('TAKT_SCRUB_URL', '(u) => u.split("#")[0]');
 
 ### HTTPS only
 
-The ingest origin and the script origin must use `https`, `localhost` included. `takt-core-php` 0.7 refuses any other endpoint, so a plain `http` value is ignored on save and on read: the field comes back empty, an admin notice names the setting, and WooCommerce purchases are not sent until the ingest origin is fixed. On a local development site, serve Takt over a local https setup (a self-signed certificate trusted by your system works) or point the ingest origin at an https tunnel.
+The ingest origin and the script origin must use `https`, `localhost` included. `takt-core-php` 0.7 refuses any other endpoint, so a plain `http` value is ignored on save and on read: the field comes back empty and an admin notice names the setting. Two consequences differ by setting:
+
+- **Script origin:** the tracking is suspended until it is fixed. The snippet is not rendered at all, so no page is tracked and no request falls back to `taktlytics.com`. Saving the field blank does not lift the suspension: only a valid `https` origin does.
+- **Ingest origin:** WooCommerce purchases are not sent until the ingest origin is fixed. Browser tracking is not affected.
+
+On a local development site, serve Takt over a local https setup (a self-signed certificate trusted by your system works) or point the ingest origin at an https tunnel.
 
 ### Privacy
 

@@ -16,10 +16,16 @@ final class SnippetInjector
     /** @param array<string,mixed> $settings */
     public static function markup(array $settings, ?string $nonce = null): string
     {
-        if (($settings['domain'] ?? '') === '') {
+        if (($settings['domain'] ?? '') === '' || in_array('script_origin', Settings::refusedUrls($settings), true)) {
             return '';
         }
 
-        return (new SnippetRenderer(Settings::toOptions($settings, $nonce)))->render();
+        $options = Settings::toOptions($settings, $nonce);
+        $renderer = new SnippetRenderer($options);
+        if ($options->routeTemplates) {
+            $renderer = $renderer->withRouteTemplate(RouteTemplate::resolve());
+        }
+
+        return $renderer->render();
     }
 }

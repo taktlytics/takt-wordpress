@@ -40,6 +40,7 @@ final class TaktClientFactory
                 $client ?? new WpRemotePostClient(),
                 $factory,
                 $factory,
+                redactRoutes: Settings::redactRoutes($settings),
             );
         } catch (\InvalidArgumentException) {
             return null;

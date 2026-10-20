@@ -57,7 +57,11 @@ In the WordPress options table, or in a wp-config.php constant (TAKT_API_KEY) wh
 
 = 0.5.0 =
 * The bundled takt-core-php moves to 0.7.0, which loads takt-core 0.12.0. The ingest origin and the script origin must now use https, localhost included: plain http values are ignored, an admin notice names the setting, and the TAKT_PLAINTEXT_HOSTS constant no longer has any effect.
-* New setting Redacted routes (SDK mode): route patterns such as /verify/{token} are sent as their pattern instead of the real path. Constraints such as {code<\d{1,3}>} are supported.
+* New setting Redacted routes (SDK mode): route patterns such as /verify/{token} are sent as their pattern instead of the real path. Constraints such as {code<\d{1,3}>} are supported. A value that breaks its constraint is not masked (/reset/1234 with {code<\d{1,3}>} is sent in clear), and the pattern /* rewrites every page: do not use it.
+* New setting Route templates (SDK mode): sends every page under a template, so no raw path leaves the site. The template comes from the takt_route_template filter, or defaults to / on the front page, /{post_type}/{slug} on a single post or page, and /[redacted] elsewhere.
+* A plain http script origin suspends the tracking (no snippet at all) until it is replaced by a valid https origin, instead of falling back to the default collect URL.
+* The redacted routes also apply to the server-to-server purchase events, in SDK mode.
+* The admin screen and its messages are translatable (text domain takt-analytics, French source).
 * With an http origin, the server-to-server client is no longer built, so a misconfigured origin cannot break page loads.
 
 = 0.4.0 =
@@ -92,7 +96,7 @@ In the WordPress options table, or in a wp-config.php constant (TAKT_API_KEY) wh
 == Upgrade Notice ==
 
 = 0.5.0 =
-The ingest and script origins must use https, localhost included. A plain http origin is now ignored: switch it to https, or WooCommerce purchases stop arriving.
+The ingest and script origins must use https, localhost included. A plain http origin is now ignored: switch it to https. A refused script origin suspends the tracking until it is fixed, and a refused ingest origin stops WooCommerce purchases from arriving.
 
 = 0.4.0 =
 The ingest and script origins must use https. If WooCommerce purchases stop arriving, check Settings → Takt Analytics for a plain http origin.

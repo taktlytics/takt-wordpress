@@ -316,4 +316,53 @@ final class SettingsTest extends TestCase
         $cdn = Settings::toOptions(['domain' => 'example.com', 'mode' => 'cdn', 'exclude' => ['/app']]);
         $this->assertSame([], $cdn->exclude);
     }
+
+    public function test_sanitize_reads_the_route_templates_checkbox(): void
+    {
+        $this->assertTrue(Settings::sanitize(['route_templates' => '1'])['route_templates']);
+        $this->assertFalse(Settings::sanitize([])['route_templates']);
+    }
+
+    public function test_to_options_passes_route_templates_only_in_sdk_mode(): void
+    {
+        $sdk = Settings::toOptions(Settings::sanitize(['domain' => 'example.com', 'mode' => 'sdk', 'route_templates' => '1']), null);
+        $cdn = Settings::toOptions(Settings::sanitize(['domain' => 'example.com', 'mode' => 'cdn', 'route_templates' => '1']), null);
+
+        $this->assertTrue($sdk->routeTemplates);
+        $this->assertFalse($cdn->routeTemplates);
+    }
+
+    public function test_redact_routes_are_only_handed_out_in_sdk_mode(): void
+    {
+        $this->assertSame(['/verify/{token}'], Settings::redactRoutes(Settings::sanitize(['mode' => 'sdk', 'redact_routes' => '/verify/{token}'])));
+        $this->assertSame([], Settings::redactRoutes(Settings::sanitize(['mode' => 'cdn', 'redact_routes' => '/verify/{token}'])));
+    }
+
+    public function test_a_plain_http_script_origin_is_recorded_as_refused(): void
+    {
+        $clean = Settings::sanitize(['domain' => 'example.com', 'script_origin' => 'http://cdn.example.com']);
+
+        $this->assertSame('', $clean['script_origin']);
+        $this->assertSame(['script_origin'], $clean['refused_urls']);
+    }
+
+    public function test_a_refused_script_origin_stays_refused_when_the_field_comes_back_blank(): void
+    {
+        $clean = Settings::sanitize(['domain' => 'example.com', 'script_origin' => '', 'refused_urls' => ['script_origin']]);
+
+        $this->assertSame(['script_origin'], $clean['refused_urls']);
+    }
+
+    public function test_a_blank_script_origin_that_was_never_refused_is_not_refused(): void
+    {
+        $this->assertSame([], Settings::sanitize(['domain' => 'example.com', 'script_origin' => ''])['refused_urls']);
+    }
+
+    public function test_an_https_script_origin_clears_the_refusal(): void
+    {
+        $clean = Settings::sanitize(['domain' => 'example.com', 'script_origin' => 'https://cdn.example.com', 'refused_urls' => ['script_origin']]);
+
+        $this->assertSame([], $clean['refused_urls']);
+        $this->assertSame('https://cdn.example.com', $clean['script_origin']);
+    }
 }

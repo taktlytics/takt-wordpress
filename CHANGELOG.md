@@ -14,7 +14,20 @@
 - New **Redacted routes** setting (SDK mode, comma-separated): route patterns
   such as `/verify/{token}` are sent as their pattern instead of the real path,
   and segment constraints like `{code<\d{1,3}>}` are honoured. Like **Excluded
-  paths**, it is dropped in the other modes.
+  paths**, it is dropped in the other modes. It also applies to server-to-server
+  purchase events. Two limits: a value that breaks its constraint is not masked
+  (`/reset/1234` with `{code<\d{1,3}>}` is sent in clear), and the pattern `/*`
+  rewrites every page, so avoid it.
+- A plain `http` **Script origin** now suspends the tracking: no snippet is
+  rendered, so nothing falls back to the default collect URL. The refusal is
+  stored with the settings and an admin notice says tracking is suspended until
+  the origin is fixed. A blank save does not lift it.
+- New **Route templates** setting (SDK mode): every page is sent under a
+  template, never its raw path. The template comes from the `takt_route_template`
+  filter; without one it is `/` on the front page, `/{post_type}/{slug}` on a
+  single post or page, and `/[redacted]` elsewhere.
+- The admin screen strings are translatable (text domain `takt-analytics`,
+  French source).
 
 ## 0.4.0
 

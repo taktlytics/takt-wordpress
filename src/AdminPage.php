@@ -13,16 +13,13 @@ final class AdminPage
 {
     private const GROUP = 'takt_group';
 
-    private const URL_LABELS = [
-        'api_endpoint' => 'Origine d\'ingestion',
-        'script_origin' => 'Origine du script',
-    ];
+    private const TEXT_DOMAIN = 'takt-analytics';
 
     public function register(): void
     {
         \add_action('admin_menu', [$this, 'addPage']);
         \add_action('admin_init', [$this, 'registerSetting']);
-        \add_action('admin_notices', [$this, 'renderIgnoredUrlNotice']);
+        \add_action('admin_notices', [$this, 'renderRefusedUrlNotice']);
     }
 
     public function addPage(): void
@@ -51,20 +48,18 @@ final class AdminPage
      */
     public static function sanitize(array $raw): array
     {
-        // Write-only key: a blank submission means "unchanged", not "erase".
-        if (($raw['api_key'] ?? '') === '') {
-            $stored = (array) \get_option(Plugin::OPTION, []);
-            if (!empty($stored['api_key'])) {
-                $raw['api_key'] = $stored['api_key'];
-            }
+        $stored = (array) \get_option(Plugin::OPTION, []);
+        if (($raw['api_key'] ?? '') === '' && !empty($stored['api_key'])) {
+            $raw['api_key'] = $stored['api_key'];
         }
+        $raw['refused_urls'] = Settings::refusedUrls($stored);
 
         $clean = Settings::sanitize($raw);
-        foreach (self::rejectedUrlKeys($raw, $clean) as $key) {
+        foreach (Settings::refusedUrls($clean) as $key) {
             \add_settings_error(
                 Plugin::OPTION,
                 'takt_' . $key,
-                self::URL_LABELS[$key] . ' : URL refusée. Seul https est accepté.',
+                self::refusalMessage($key),
                 'error',
             );
         }
@@ -74,69 +69,24 @@ final class AdminPage
 
     /**
      * @param array<string,mixed> $stored
-     * @return list<string>
      */
-    public static function ignoredUrlKeys(array $stored): array
-    {
-        return self::rejectedUrlKeys($stored, Settings::sanitize($stored));
-    }
-
-    /**
-     * @param array<string,mixed> $stored
-     */
-    public static function ignoredUrlNotice(array $stored): string
+    public static function refusedUrlNotice(array $stored): string
     {
         $messages = array_map(
-            static fn (string $key): string => '<p>' . \esc_html(self::ignoredUrlMessage($key)) . '</p>',
-            self::ignoredUrlKeys($stored),
+            static fn (string $key): string => '<p>' . \esc_html(self::refusalMessage($key)) . '</p>',
+            Settings::refusedUrls(Settings::sanitize($stored)),
         );
 
         return $messages === [] ? '' : '<div class="notice notice-error">' . implode('', $messages) . '</div>';
     }
 
-    public function renderIgnoredUrlNotice(): void
+    public function renderRefusedUrlNotice(): void
     {
         if (!\current_user_can('manage_options') || \get_current_screen()?->id === 'settings_page_takt-analytics') {
             return;
         }
 
-        echo self::ignoredUrlNotice((array) \get_option(Plugin::OPTION, []));
-    }
-
-    /**
-     * @param array<string,mixed> $raw
-     * @param array<string,mixed> $clean
-     * @return list<string>
-     */
-    private static function rejectedUrlKeys(array $raw, array $clean): array
-    {
-        $rejected = [];
-        foreach (array_keys(self::URL_LABELS) as $key) {
-            $submitted = is_string($raw[$key] ?? null) ? trim($raw[$key]) : '';
-            if ($submitted !== '' && $clean[$key] === '') {
-                $rejected[] = $key;
-            }
-        }
-
-        return $rejected;
-    }
-
-    private static function ignoredUrlMessage(string $key): string
-    {
-        $message = self::URL_LABELS[$key]
-            . " : l'URL enregistrée n'est pas acceptée (https requis).";
-
-        return $key === 'api_endpoint'
-            ? $message . ' Tant qu\'elle n\'est pas corrigée, l\'envoi des achats WooCommerce est interrompu.'
-            : $message;
-    }
-
-    /**
-     * @param list<string> $ignored
-     */
-    private static function ignoredUrlHint(string $key, array $ignored): string
-    {
-        return in_array($key, $ignored, true) ? self::ignoredUrlMessage($key) : '';
+        echo self::refusedUrlNotice((array) \get_option(Plugin::OPTION, []));
     }
 
     public static function keyStorageNotice(bool $locked, string $storedKey): string
@@ -146,7 +96,7 @@ final class AdminPage
         }
 
         return '<div class="notice notice-warning"><p>'
-            . \esc_html('La clé API est enregistrée dans les options WordPress. Définissez la constante TAKT_API_KEY dans wp-config.php pour la retirer de la base de données.')
+            . \esc_html(\__('La clé API est enregistrée dans les options WordPress. Définissez la constante TAKT_API_KEY dans wp-config.php pour la retirer de la base de données.', self::TEXT_DOMAIN))
             . '</p></div>';
     }
 
@@ -158,7 +108,7 @@ final class AdminPage
 
         $stored = (array) \get_option(Plugin::OPTION, []);
         $s = Settings::sanitize($stored);
-        $ignored = self::ignoredUrlKeys($stored);
+        $refused = Settings::refusedUrls($s);
         $keyLocked = \defined('TAKT_API_KEY');
         $hasKey = $keyLocked || ($s['api_key'] ?? '') !== '';
 
@@ -168,57 +118,76 @@ final class AdminPage
         \settings_fields(self::GROUP);
         echo '<table class="form-table" role="presentation">';
 
-        $this->textRow('domain', 'Domaine', $s['domain'], 'example.com');
-        $this->selectRow('mode', 'Mode du script', $s['mode'], [
-            'inline' => 'Inline (anti-adblock)',
-            'cdn' => 'CDN (jsDelivr)',
-            'asset' => 'Fichier hébergé',
-            'sdk' => 'SDK (module ES)',
+        $this->textRow('domain', \__('Domaine', self::TEXT_DOMAIN), $s['domain'], 'example.com');
+        $this->selectRow('mode', \__('Mode du script', self::TEXT_DOMAIN), $s['mode'], [
+            'inline' => \__('Inline (anti-adblock)', self::TEXT_DOMAIN),
+            'cdn' => \__('CDN (jsDelivr)', self::TEXT_DOMAIN),
+            'asset' => \__('Fichier hébergé', self::TEXT_DOMAIN),
+            'sdk' => \__('SDK (module ES)', self::TEXT_DOMAIN),
         ]);
-        $this->textRow('script_origin', 'Origine du script', $s['script_origin'], 'https://cdn.exemple.com', self::ignoredUrlHint('script_origin', $ignored));
-        $this->checkboxRow('exclude_localhost', 'Exclure localhost', $s['exclude_localhost']);
+        $this->textRow('script_origin', \__('Origine du script', self::TEXT_DOMAIN), $s['script_origin'], 'https://cdn.exemple.com', self::refusalHint('script_origin', $refused));
+        $this->checkboxRow('exclude_localhost', \__('Exclure localhost', self::TEXT_DOMAIN), $s['exclude_localhost']);
 
-        $this->checkboxRow('outbound', 'Clics sortants', $s['outbound']);
-        $this->checkboxRow('files', 'Téléchargements', $s['files']);
-        $this->checkboxRow('tagged', 'Événements balisés (HTML)', $s['tagged']);
-        $this->checkboxRow('not_found', 'Pages 404', $s['not_found']);
-        $this->textRow('file_extensions', 'Extensions téléchargeables', implode(', ', $s['file_extensions']), 'pdf, zip, docx');
+        $this->checkboxRow('outbound', \__('Clics sortants', self::TEXT_DOMAIN), $s['outbound']);
+        $this->checkboxRow('files', \__('Téléchargements', self::TEXT_DOMAIN), $s['files']);
+        $this->checkboxRow('tagged', \__('Événements balisés (HTML)', self::TEXT_DOMAIN), $s['tagged']);
+        $this->checkboxRow('not_found', \__('Pages 404', self::TEXT_DOMAIN), $s['not_found']);
+        $this->textRow('file_extensions', \__('Extensions téléchargeables', self::TEXT_DOMAIN), implode(', ', $s['file_extensions']), 'pdf, zip, docx');
 
         $rate = $s['sample_rate'] === null ? '' : (string) $s['sample_rate'];
-        $this->textRow('sample_rate', 'Taux d\'échantillonnage', $rate, '0.5');
-        $this->checkboxRow('track_query', 'Conserver la query string', $s['track_query']);
-        $this->textRow('query_params', 'Paramètres de requête conservés', implode(', ', $s['query_params']), 'utm_source, utm_medium');
-        $this->textRow('exclude', 'Chemins exclus du suivi (mode SDK)', implode(', ', $s['exclude']), '/app, /account');
+        $this->textRow('sample_rate', \__("Taux d'échantillonnage", self::TEXT_DOMAIN), $rate, '0.5');
+        $this->checkboxRow('track_query', \__('Conserver la query string', self::TEXT_DOMAIN), $s['track_query']);
+        $this->textRow('query_params', \__('Paramètres de requête conservés', self::TEXT_DOMAIN), implode(', ', $s['query_params']), 'utm_source, utm_medium');
+        $this->textRow('exclude', \__('Chemins exclus du suivi (mode SDK)', self::TEXT_DOMAIN), implode(', ', $s['exclude']), '/app, /account');
         $this->textRow(
             'redact_routes',
-            'Routes masquées (mode SDK)',
+            \__('Routes masquées (mode SDK)', self::TEXT_DOMAIN),
             implode(', ', $s['redact_routes']),
             '/verify/{token}, /reset/{code}',
-            'Les pages qui correspondent à une route sont envoyées sous son gabarit, sans la valeur réelle des segments.',
+            \__('Les pages qui correspondent à une route sont envoyées sous son gabarit, sans la valeur réelle des segments. Une valeur qui ne respecte pas une contrainte (ex. /reset/1234 avec {code<\d{1,3}>}) n\'est pas masquée et sort en clair. Le motif /* réécrit toutes les pages : ne l\'utilisez pas.', self::TEXT_DOMAIN),
         );
-        $this->checkboxRow('ignore_dnt', 'Ignorer Do-Not-Track', $s['ignore_dnt']);
-        $this->checkboxRow('disable_tracking', 'Suspendre le suivi', $s['disable_tracking']);
+        $this->checkboxRow(
+            'route_templates',
+            \__('Toutes les pages sous leur gabarit (mode SDK)', self::TEXT_DOMAIN),
+            $s['route_templates'],
+            \__('Aucun chemin brut n\'est envoyé : chaque page part sous le gabarit du filtre takt_route_template, sinon / pour l\'accueil, /{post_type}/{slug} pour les contenus uniques et /[redacted] pour le reste (archives, recherche, 404).', self::TEXT_DOMAIN),
+        );
+        $this->checkboxRow('ignore_dnt', \__('Ignorer Do-Not-Track', self::TEXT_DOMAIN), $s['ignore_dnt']);
+        $this->checkboxRow('disable_tracking', \__('Suspendre le suivi', self::TEXT_DOMAIN), $s['disable_tracking']);
 
-        $this->checkboxRow('woocommerce', 'Suivi WooCommerce (achats)', $s['woocommerce']);
-        $this->selectRow('wc_trigger_status', 'Déclencheur de la commande', $s['wc_trigger_status'], [
-            'completed' => 'Terminée',
-            'processing' => 'En traitement',
+        $this->checkboxRow('woocommerce', \__('Suivi WooCommerce (achats)', self::TEXT_DOMAIN), $s['woocommerce']);
+        $this->selectRow('wc_trigger_status', \__('Déclencheur de la commande', self::TEXT_DOMAIN), $s['wc_trigger_status'], [
+            'completed' => \__('Terminée', self::TEXT_DOMAIN),
+            'processing' => \__('En traitement', self::TEXT_DOMAIN),
         ]);
-        $endpointHint = self::ignoredUrlHint('api_endpoint', $ignored);
         $this->textRow(
             'api_endpoint',
-            "Origine d'ingestion",
+            \__("Origine d'ingestion", self::TEXT_DOMAIN),
             $s['api_endpoint'],
             'https://taktlytics.com',
-            'Origine du service Takt, sans le chemin de collecte. « /api/event » est ajouté automatiquement, '
-                . "et l'URL de collecte complète est acceptée puis repliée sur son origine."
-                . ($endpointHint === '' ? '' : ' ' . $endpointHint),
+            \__('Origine du service Takt, sans le chemin de collecte. « /api/event » est ajouté automatiquement, et l\'URL de collecte complète est acceptée puis repliée sur son origine.', self::TEXT_DOMAIN)
+                . ' ' . self::refusalHint('api_endpoint', $refused),
         );
         $this->apiKeyRow($hasKey, $keyLocked);
 
         echo '</table>';
         \submit_button();
         echo '</form></div>';
+    }
+
+    private static function refusalMessage(string $key): string
+    {
+        return $key === 'api_endpoint'
+            ? \__("Origine d'ingestion : l'URL n'est pas acceptée (https requis). L'envoi des achats WooCommerce est interrompu tant qu'elle n'est pas corrigée.", self::TEXT_DOMAIN)
+            : \__("Origine du script : l'URL n'est pas acceptée (https requis). Le suivi est suspendu tant qu'elle n'est pas corrigée.", self::TEXT_DOMAIN);
+    }
+
+    /**
+     * @param list<string> $refused
+     */
+    private static function refusalHint(string $key, array $refused): string
+    {
+        return in_array($key, $refused, true) ? self::refusalMessage($key) : '';
     }
 
     private function field(string $key): string
@@ -245,14 +214,15 @@ final class AdminPage
         );
     }
 
-    private function checkboxRow(string $key, string $label, bool $checked): void
+    private function checkboxRow(string $key, string $label, bool $checked, string $description = ''): void
     {
         printf(
-            '<tr><th scope="row">%2$s</th><td><label><input type="checkbox" name="%3$s" value="1" %4$s /> %2$s</label></td></tr>',
+            '<tr><th scope="row">%2$s</th><td><label><input type="checkbox" name="%3$s" value="1" %4$s /> %2$s</label>%5$s</td></tr>',
             \esc_attr($key),
             \esc_html($label),
             \esc_attr($this->field($key)),
             \checked($checked, true, false),
+            $description === '' ? '' : '<p class="description">' . \esc_html($description) . '</p>',
         );
     }
 
@@ -279,15 +249,16 @@ final class AdminPage
     private function apiKeyRow(bool $hasKey, bool $locked): void
     {
         $note = $locked
-            ? '<p class="description">Définie via la constante <code>TAKT_API_KEY</code> (wp-config.php).</p>'
+            ? '<p class="description">' . \__('Définie via la constante <code>TAKT_API_KEY</code> (wp-config.php).', self::TEXT_DOMAIN) . '</p>'
             : '';
         printf(
-            '<tr><th scope="row"><label for="takt_api_key">Clé API</label></th><td>'
+            '<tr><th scope="row"><label for="takt_api_key">%5$s</label></th><td>'
                 . '<input type="password" id="takt_api_key" name="%1$s" value="" placeholder="%2$s" autocomplete="new-password" class="regular-text" %3$s />%4$s</td></tr>',
             \esc_attr($this->field('api_key')),
             $hasKey ? '••••••••' : '',
             $locked ? 'disabled' : '',
             $note,
+            \esc_html(\__('Clé API', self::TEXT_DOMAIN)),
         );
     }
 }

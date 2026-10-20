@@ -13,6 +13,8 @@ final class Settings
 
     private const MAX_ROUTE_LENGTH = 200;
 
+    private const URL_KEYS = ['api_endpoint', 'script_origin'];
+
     /**
      * @param array<string,mixed> $raw
      * @return array<string,mixed>
@@ -22,7 +24,7 @@ final class Settings
         $domain = is_string($raw['domain'] ?? null) ? trim($raw['domain']) : '';
         $mode = in_array($raw['mode'] ?? null, ['cdn', 'asset', 'sdk'], true) ? $raw['mode'] : 'inline';
 
-        return [
+        $clean = [
             'domain' => self::isValidHostname($domain) ? $domain : '',
             'mode' => $mode,
             'outbound' => !empty($raw['outbound']),
@@ -40,6 +42,7 @@ final class Settings
             'query_params' => self::parseParams($raw['query_params'] ?? ''),
             'exclude' => self::parsePaths($raw['exclude'] ?? ''),
             'redact_routes' => self::parseRoutes($raw['redact_routes'] ?? ''),
+            'route_templates' => !empty($raw['route_templates']),
             'ignore_dnt' => !empty($raw['ignore_dnt']),
             'disable_tracking' => !empty($raw['disable_tracking']),
             'woocommerce' => !empty($raw['woocommerce']),
@@ -49,6 +52,34 @@ final class Settings
             'api_key' => is_string($raw['api_key'] ?? null) ? trim($raw['api_key']) : '',
             'api_endpoint' => self::sanitizeIngestOrigin($raw['api_endpoint'] ?? ''),
         ];
+        $clean['refused_urls'] = self::refusedUrlsFor($raw, $clean);
+
+        return $clean;
+    }
+
+    /**
+     * @param array<string,mixed> $settings
+     * @return list<string>
+     */
+    public static function refusedUrls(array $settings): array
+    {
+        $keys = is_array($settings['refused_urls'] ?? null) ? $settings['refused_urls'] : [];
+
+        return array_values(array_filter(
+            $keys,
+            static fn (mixed $key): bool => is_string($key) && in_array($key, self::URL_KEYS, true),
+        ));
+    }
+
+    /**
+     * @param array<string,mixed> $s
+     * @return list<string>
+     */
+    public static function redactRoutes(array $s): array
+    {
+        $routes = is_array($s['redact_routes'] ?? null) ? $s['redact_routes'] : [];
+
+        return ($s['mode'] ?? 'inline') === 'sdk' ? array_values($routes) : [];
     }
 
     /**
@@ -71,7 +102,8 @@ final class Settings
         // in sdk mode, core-php throws if it is set otherwise. Drop it outside
         // sdk (or when empty) so the admin can't fatal every page.
         $exclude = is_array($s['exclude'] ?? null) ? $s['exclude'] : [];
-        $redactRoutes = is_array($s['redact_routes'] ?? null) ? $s['redact_routes'] : [];
+        $redactRoutes = self::redactRoutes($s);
+        $routeTemplates = $mode === 'sdk' && !empty($s['route_templates']);
 
         $args = [
             'domain' => $s['domain'] ?? '',
@@ -90,12 +122,13 @@ final class Settings
             'respectDnt' => !empty($s['ignore_dnt']) ? false : null,
             'enabled' => !empty($s['disable_tracking']) ? false : null,
             'scrubUrl' => $scrubUrl,
+            'routeTemplates' => $routeTemplates,
         ];
 
         if ($mode === 'sdk' && $exclude !== []) {
             $args['exclude'] = $exclude;
         }
-        if ($mode === 'sdk' && $redactRoutes !== []) {
+        if ($redactRoutes !== []) {
             $args['redactRoutes'] = $redactRoutes;
         }
 
@@ -152,6 +185,26 @@ final class Settings
         }
 
         return $out;
+    }
+
+    /**
+     * @param array<string,mixed> $raw
+     * @param array<string,mixed> $clean
+     * @return list<string>
+     */
+    private static function refusedUrlsFor(array $raw, array $clean): array
+    {
+        $persisted = self::refusedUrls($raw);
+        $refused = [];
+        foreach (self::URL_KEYS as $key) {
+            $submitted = is_string($raw[$key] ?? null) ? trim($raw[$key]) : '';
+            $wasRefused = $submitted !== '' || in_array($key, $persisted, true);
+            if ($wasRefused && $clean[$key] === '') {
+                $refused[] = $key;
+            }
+        }
+
+        return $refused;
     }
 
     /** @return list<string> */

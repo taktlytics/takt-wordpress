@@ -10,20 +10,28 @@ const port = Number(process.env.MOCK_INGEST_PORT || 9911);
 const events = [];
 
 const certDir = fs.mkdtempSync(path.join(os.tmpdir(), 'takt-mock-ingest-'));
-const keyPath = path.join(certDir, 'key.pem');
-const certPath = path.join(certDir, 'cert.pem');
-execFileSync(
-  'openssl',
-  [
-    'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1',
-    '-subj', '/CN=localhost',
-    '-addext', 'subjectAltName=DNS:localhost,DNS:host.docker.internal',
-    '-keyout', keyPath, '-out', certPath,
-  ],
-  { stdio: 'ignore' },
-);
+let key;
+let cert;
+try {
+  const keyPath = path.join(certDir, 'key.pem');
+  const certPath = path.join(certDir, 'cert.pem');
+  execFileSync(
+    'openssl',
+    [
+      'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1',
+      '-subj', '/CN=localhost',
+      '-addext', 'subjectAltName=DNS:localhost,DNS:host.docker.internal',
+      '-keyout', keyPath, '-out', certPath,
+    ],
+    { stdio: 'ignore' },
+  );
+  key = fs.readFileSync(keyPath);
+  cert = fs.readFileSync(certPath);
+} finally {
+  fs.rmSync(certDir, { recursive: true, force: true });
+}
 
-const server = https.createServer({ key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) }, (req, res) => {
+const server = https.createServer({ key, cert }, (req, res) => {
   if (req.method === 'POST' && req.url.startsWith('/api/event')) {
     let body = '';
     req.on('data', (chunk) => {
