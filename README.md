@@ -1,23 +1,23 @@
 # Takt Analytics for WordPress
 
-> 📚 **Documentation** — [taktlytics.com/docs/wrappers/wordpress](https://taktlytics.com/docs/wrappers/wordpress)
+> 📚 **Documentation**: [taktlytics.com/docs/wrappers/wordpress](https://taktlytics.com/docs/wrappers/wordpress)
 
-The official WordPress plugin for [Takt](https://taktlytics.com), privacy-first web analytics. It injects the Takt browser snippet into your site and — when WooCommerce is active — reports completed orders as server-to-server purchase events with revenue.
+The official WordPress plugin for [Takt](https://taktlytics.com), privacy-first web analytics. It injects the Takt browser snippet into your site and, when WooCommerce is active, reports completed orders as server-to-server purchase events with revenue.
 
 Takt itself is a managed service hosted in Europe; the plugin connects your site to it. Only the measurement script can be served from your own domain (the `asset` mode below).
 
 - **Snippet injection** into `wp_head` (inline, CDN, asset served from your own origin, or ES-module SDK).
 - **Autocapture** for outbound links, file downloads, tagged events (`data-takt-event`) and 404s.
 - **WooCommerce purchases** sent server-to-server, so revenue is tracked even when an order completes off-session (IPN, admin, cron).
-- **No bundled HTTP stack** — server-to-server requests go through WordPress' own `wp_remote_post`.
-- **Dependency-isolated** — all Composer dependencies are namespaced under `Takt\WP\Vendor\`, so the plugin never clashes with another plugin's PSR-7/HTTP libraries.
+- **No bundled HTTP stack**: server-to-server requests go through WordPress' own `wp_remote_post`.
+- **Dependency-isolated**: all Composer dependencies are namespaced under `Takt\WP\Vendor\`, so the plugin never clashes with another plugin's PSR-7/HTTP libraries.
 
 ## Requirements
 
 - WordPress 6.0+
 - PHP 8.1+
 - WooCommerce (optional, for purchase tracking)
-- A Takt account: a site domain, and — for purchase tracking — an API key
+- A Takt account: a site domain, plus an API key for purchase tracking
 
 ## Installation
 
@@ -35,12 +35,12 @@ The release ZIP is self-contained: it bundles `takt-core-php` and its PSR-7 depe
 
 ## Configuration
 
-**Settings → Takt Analytics** — 19 settings, all stored in the single `takt_settings` option. Defaults below are what a fresh, never-saved install uses.
+**Settings → Takt Analytics**: 19 settings, all stored in the single `takt_settings` option. Defaults below are what a fresh, never-saved install uses.
 
 | Setting | Default | Description |
 | --- | --- | --- |
 | Domain | *(empty)* | The site identifier sent with every event (e.g. `example.com`). While empty, no snippet is injected at all. |
-| Mode | `inline` | `inline` (tracker embedded in the page, anti-adblock), `cdn` (jsDelivr), `asset` (served from your own origin) or `sdk` (ES module — required by *Excluded paths* and URL scrubbing). |
+| Mode | `inline` | `inline` (tracker embedded in the page, anti-adblock), `cdn` (jsDelivr), `asset` (served from your own origin) or `sdk` (ES module, required by *Excluded paths* and URL scrubbing). |
 | Script origin | *(empty)* | Base URL the tracker is served from in `cdn`/`asset` mode. |
 | Exclude localhost | off | Skip tracking on local hostnames (`localhost`, `*.local`, private ranges). **Off by default**: turn it on if your production domain is also used locally. |
 | Outbound clicks | off | Autocapture: sends `Outbound Link: Click` for links to another hostname. |
@@ -51,7 +51,7 @@ The release ZIP is self-contained: it bundles `takt-core-php` and its PSR-7 depe
 | Sampling rate | *(empty)* | Keep a fraction of hits, e.g. `0.5` for ~50%. Empty tracks everything. |
 | Keep query string | off | Keep the raw query string + hash in tracked URLs. Off strips them. |
 | Kept query params | *(empty)* | Allowlist of params kept when *Keep query string* is off (e.g. `utm_source, utm_medium`). |
-| Excluded paths | *(empty)* | Path prefixes never tracked (e.g. `/app, /account`). SDK mode only — silently dropped in the other modes. |
+| Excluded paths | *(empty)* | Path prefixes never tracked (e.g. `/app, /account`). SDK mode only. Silently dropped in the other modes. |
 | Ignore Do-Not-Track | off | Stop honoring the browser Do-Not-Track header (honored by default). |
 | Pause tracking | off | Kill-switch: disable tracking entirely without removing the plugin. |
 | WooCommerce | off | Send purchase events with revenue. Also needs the ingest origin and the API key. |
@@ -78,7 +78,7 @@ define('TAKT_API_KEY', 'your-key');
 
 ### URL scrubbing via `wp-config.php`
 
-`scrubUrl` is a raw JavaScript function injected verbatim into the page, so it is **dev-controlled only** — it lives in a constant, never in the database or the admin UI, and only takes effect in `sdk` mode:
+`scrubUrl` is a raw JavaScript function injected verbatim into the page, so it is **dev-controlled only**. It lives in a constant, never in the database or the admin UI, and only takes effect in `sdk` mode:
 
 ```php
 define('TAKT_SCRUB_URL', '(u) => u.split("#")[0]');

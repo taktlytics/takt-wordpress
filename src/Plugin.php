@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Vskstudio\Takt\WordPress;
 
 /**
- * Orchestrator: reads the stored settings and wires WordPress hooks — the snippet
+ * Orchestrator: reads the stored settings and wires WordPress hooks: the snippet
  * into wp_head and, when configured, WooCommerce purchases into a server-to-server
  * event. Kept thin; the work lives in the dedicated units it composes.
  */
