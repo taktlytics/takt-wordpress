@@ -366,13 +366,13 @@ final class SettingsTest extends TestCase
         $this->assertSame('https://cdn.example.com', $clean['script_origin']);
     }
 
-    public function test_route_templates_turn_download_tracking_off(): void
+    public function test_download_tracking_follows_its_setting_in_template_mode(): void
     {
-        $sdk = Settings::toOptions(Settings::sanitize(['domain' => 'example.com', 'mode' => 'sdk', 'route_templates' => '1', 'files' => '1']), null);
-        $plain = Settings::toOptions(Settings::sanitize(['domain' => 'example.com', 'mode' => 'sdk', 'files' => '1']), null);
+        $templated = Settings::toOptions(Settings::sanitize(['domain' => 'example.com', 'mode' => 'sdk', 'route_templates' => '1', 'files' => '1']), null);
+        $templatedOff = Settings::toOptions(Settings::sanitize(['domain' => 'example.com', 'mode' => 'sdk', 'route_templates' => '1']), null);
 
-        $this->assertFalse($sdk->files);
-        $this->assertTrue($plain->files);
+        $this->assertTrue($templated->files);
+        $this->assertFalse($templatedOff->files);
     }
 
     public function test_sanitize_never_yields_a_non_https_ingest_origin(): void

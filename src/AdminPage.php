@@ -130,12 +130,7 @@ final class AdminPage
         $this->checkboxRow('exclude_localhost', \__('Exclure localhost', self::TEXT_DOMAIN), $s['exclude_localhost']);
 
         $this->checkboxRow('outbound', \__('Clics sortants', self::TEXT_DOMAIN), $s['outbound']);
-        $this->checkboxRow(
-            'files',
-            \__('Téléchargements', self::TEXT_DOMAIN),
-            $s['files'],
-            $s['mode'] === 'sdk' && $s['route_templates'] ? \__('Le suivi des téléchargements est désactivé en mode gabarit.', self::TEXT_DOMAIN) : '',
-        );
+        $this->checkboxRow('files', \__('Téléchargements', self::TEXT_DOMAIN), $s['files']);
         $this->checkboxRow('tagged', \__('Événements balisés (HTML)', self::TEXT_DOMAIN), $s['tagged']);
         $this->checkboxRow('not_found', \__('Pages 404', self::TEXT_DOMAIN), $s['not_found']);
         $this->textRow('file_extensions', \__('Extensions téléchargeables', self::TEXT_DOMAIN), implode(', ', $s['file_extensions']), 'pdf, zip, docx');
@@ -156,7 +151,7 @@ final class AdminPage
             'route_templates',
             \__('Toutes les pages sous leur gabarit (mode SDK)', self::TEXT_DOMAIN),
             $s['route_templates'],
-            \__('Les pages sont envoyées sous leur gabarit, jamais sous leur chemin réel. Gabarit : le filtre takt_route_template, sinon / pour l\'accueil, /{post_type}/{slug} pour les contenus uniques et /[redacted] pour le reste (archives, recherche, 404). Le suivi des téléchargements est désactivé dans ce mode.', self::TEXT_DOMAIN),
+            \__('Les pages sont envoyées sous leur gabarit, jamais sous leur chemin réel. Gabarit : le filtre takt_route_template, sinon / pour l\'accueil, /{post_type}/{slug} pour les contenus uniques et /[redacted] pour le reste (archives, recherche, 404).', self::TEXT_DOMAIN),
         );
         $this->checkboxRow('ignore_dnt', \__('Ignorer Do-Not-Track', self::TEXT_DOMAIN), $s['ignore_dnt']);
         $this->checkboxRow('disable_tracking', \__('Suspendre le suivi', self::TEXT_DOMAIN), $s['disable_tracking']);

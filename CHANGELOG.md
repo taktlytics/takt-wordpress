@@ -14,7 +14,7 @@
 - New **Redacted routes** setting (SDK mode, comma-separated): route patterns
   such as `/verify/{token}` are sent as their pattern instead of the real path,
   and segment constraints like `{code<\d{1,3}>}` are honoured. Like **Excluded
-  paths**, it is dropped in the other modes. It also applies to server-to-server
+  paths**, it is ignored in the other modes, with an admin notice. It also applies to server-to-server
   purchase events. Two limits: a value that breaks its constraint is not masked
   (`/reset/1234` with `{code<\d{1,3}>}` is sent in clear), and the pattern `/*`
   rewrites every page, so avoid it.
@@ -25,14 +25,18 @@
 - New **Route templates** setting (SDK mode): every page is sent under a
   template, never its raw path. The template comes from the `takt_route_template`
   filter; without one it is `/` on the front page, `/{post_type}/{slug}` on a
-  single post or page, and `/[redacted]` elsewhere. Download tracking is off in
-  this mode, because the template does not reach download destinations.
+  single post or page, and `/[redacted]` elsewhere. Downloads stay tracked: the
+  destination is masked, the followed origin plus `/[redacted]`, and only its
+  extension stays in clear.
 - In template mode a page URL is never sent raw. When the template cannot be
   resolved, the URL goes out under the **Redacted routes** pattern if one
   covers it, otherwise as its origin and `/[redacted]`. A URL that cannot be read
   reliably (backslash, control character, surrounding spaces, user information,
-  a host that is not DNS-compatible) goes out with an empty `u`, which the ingest
-  refuses. A referrer is always reduced to its origin, whatever its host.
+  a host that is not DNS-compatible) goes out as the followed origin plus
+  `/[redacted]` in the browser; on WooCommerce, the URL falls back to
+  `https://<domain>/`. A referrer is always reduced to its origin with a trailing
+  `/` (for example `https://example.com/`). Outbound links to the same host are
+  masked; links to another host only go through Redacted routes.
 - The admin screen strings are translatable (text domain `takt-analytics`,
   French source).
 

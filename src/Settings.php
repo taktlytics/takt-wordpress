@@ -109,7 +109,7 @@ final class Settings
             'domain' => $s['domain'] ?? '',
             'mode' => $mode,
             'outbound' => $s['outbound'] ?? false,
-            'files' => $routeTemplates ? false : ($s['files'] ?? false),
+            'files' => $s['files'] ?? false,
             'not_found' => $s['not_found'] ?? false,
             'tagged' => $s['tagged'] ?? false,
             'exclude_localhost' => $s['exclude_localhost'] ?? true,
