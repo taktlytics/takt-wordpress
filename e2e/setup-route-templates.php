@@ -1,6 +1,7 @@
 <?php
 
-update_option('permalink_structure', '/index.php/%postname%/');
+global $wp_rewrite;
+$wp_rewrite->set_permalink_structure('/index.php/%postname%/');
 flush_rewrite_rules(true);
 
 update_option('takt_settings', [
